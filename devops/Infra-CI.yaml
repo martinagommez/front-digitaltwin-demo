@@ -1,0 +1,26 @@
+name: $(var.repository_name)-Infra-$(Year)$(Month)$(Day).$(Rev:r)
+
+trigger:
+  branches:
+    include: 
+      - master
+
+  paths:
+    include: 
+      - infra/**
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+  - task: CopyFiles@2
+    inputs:
+      SourceFolder: 'infra'
+      Contents: '**'
+      TargetFolder: '$(Build.ArtifactStagingDirectory)'
+
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+      ArtifactName: 'infra'
+      publishLocation: 'Container'
