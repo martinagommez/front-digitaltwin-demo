@@ -1,0 +1,74 @@
+.markdown h1 {
+    font-size: 2.25rem; /* equivalent to text-4xl in tailwind */
+    font-weight: bold;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.markdown h2 {
+    font-size: 1.875rem; /* equivalent to text-3xl in tailwind */
+    font-weight: bold;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.markdown h3 {
+    font-size: 1.5rem; /* equivalent to text-2xl in tailwind */
+    font-weight: bold;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.markdown h4 {
+    font-size: 1.25rem; /* equivalent to text-xl in tailwind */
+    font-weight: bold;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.markdown p {
+    font-size: 1rem; /* equivalent to text-base in tailwind */
+    margin-bottom: 0.75rem;
+}
+
+.markdown a {
+    color: blue;
+    text-decoration: underline;
+}
+
+.markdown ul {
+    list-style-type: disc;
+    padding-left: 1.5rem; /* equivalent to list-inside */
+}
+
+.markdown table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.markdown th, .markdown td {
+    border: 1px solid #ccc;
+    padding: 0.5rem;
+}
+
+.markdown th {
+    background-color: #f0f0f0; /* equivalent to bg-gray-200 */
+}
+
+.markdown td {
+    background-color: #ffffff;
+}
+
+.dark .markdown th {
+    background-color: #333;
+    color: white;
+}
+
+.dark .markdown td {
+    background-color: #222;
+    color: white;
+}
+
+.dark .markdown a {
+    color: #9ecaff;
+}
