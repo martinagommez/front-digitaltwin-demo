@@ -8,7 +8,7 @@
     "pluginsTitle": "Choose one of these options",
     "logo": "https://png.pngtree.com/png-clipart/20240508/original/pngtree-artificial-intelligence-logo-png-image_15034966.png",
     "favicon": "https://png.pngtree.com/png-clipart/20230411/original/pngtree-artificial-intelligence-robot-illustration-png-image_9047239.png",
-    "setupApi": "https://ip-ativos-setupapi-b7b3ctgfh6d6hsag.westeurope-01.azurewebsites.net",
+    "setupApi": "https://chp-app-orch-faturas-1.azurewebsites.net/setup_api",
     "inputEnable": true,
     "preferedLanguage": "pt",
     "enableFeatures": {

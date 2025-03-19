@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { FaSun, FaMoon, FaLanguage } from 'react-icons/fa';
 import { RiChatNewFill } from 'react-icons/ri';
-import { PluginMeta, PluginRequest } from '../models/requests/PluginApi';
+import { PluginMeta, PluginRequest, PluginKeys } from '../models/requests/PluginApi';
 import axios from 'axios';
 import { MdMenu } from 'react-icons/md';
 import ChatComponent from './ChatComponent';
@@ -41,6 +41,7 @@ function AssistenteVirtual() {
 		availableLanguagesTitle: 'Available Languages',
 	});
 	const [pluginType, setPluginType] = useState<string>('');
+	const [pluginKeys, setPluginKeys] = useState<PluginKeys| null>(null);
 	const [featuresStates, setFeaturesStates] = useState({
 		enableNewChat: true, // default values
 		enableDarkMode: true,
@@ -100,9 +101,11 @@ function AssistenteVirtual() {
 			setPluginRequest(response.data);
 			if (plugins?.NumberOfPlugins === 1) {
 				setActivedPlugin(plugins.PluginList[0]);
+				console.log(plugins.PluginList[0]); // new for seeing what the plugin contains
 				setInputEnable(true);
 				plugins.PluginList[0].PluginType = 'chatbot';
 				setPluginType(plugins.PluginList[0].PluginType)
+				setPluginKeys(plugins.PluginList[0].PluginKeys)
 			};
 		} catch (error) {
 			console.error('Failed to fetch plugins:', error);
@@ -412,7 +415,7 @@ function AssistenteVirtual() {
 							${isSidebarOpen ? 'w-full' : 'max-w-4xl'}
 							`}>
 								<FilesProcessing 
-									activedPlugin={activedPlugin} setActivedPlugin={setActivedPlugin} 
+									activedPlugin={activedPlugin} setActivedPlugin={setActivedPlugin}
 									isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} 
 									selectedLanguage={language || 'en'}
 								/>
@@ -433,7 +436,8 @@ function AssistenteVirtual() {
 							${showSidebar ? 'w-[calc(100vw-12rem)]' : 'max-w-4xl w-full'}
 							`}> 
 							<ChatComponent 
-								activedPlugin={activedPlugin} setActivedPlugin={setActivedPlugin} 
+								activedPlugin={activedPlugin} setActivedPlugin={setActivedPlugin}
+								pluginKeys={pluginKeys} setPluginKeys={setPluginKeys}
 								inputEnable={inputEnable} setInputEnable={setInputEnable}
 								selectedLanguage={language || 'en'}
 							/>

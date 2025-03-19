@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { PluginMeta, PluginRequest } from '../models/requests/PluginApi';
+import { PluginMeta, PluginRequest,PluginKeys } from '../models/requests/PluginApi';
 import { FaFileAlt } from "react-icons/fa";
 import { FiImage, FiFile, FiX, FiSend, FiSlash, FiChevronDown, FiChevronUp } from "react-icons/fi";
 import Modal from 'react-modal';
@@ -16,17 +16,21 @@ interface Message {
     images: string[];
     sender: 'user' | 'bot' | 'websocket';
     agent?: string;
+    orch_config_id: string|undefined;
+    orch_config_key: string|undefined;
 }
 
 interface ChatComponentProps {
     inputEnable: boolean;
     setInputEnable: React.Dispatch<React.SetStateAction<boolean>>;
     activedPlugin: PluginMeta | null;
+    pluginKeys: PluginKeys | null;
     setActivedPlugin: React.Dispatch<React.SetStateAction<PluginMeta | null>>;
+    setPluginKeys: React.Dispatch<React.SetStateAction<PluginKeys | null>>;
     selectedLanguage: string;
 }
 
-function ChatComponent({ inputEnable, setInputEnable, activedPlugin, setActivedPlugin, selectedLanguage }: ChatComponentProps) {
+function ChatComponent({ inputEnable, setInputEnable, activedPlugin,pluginKeys,setActivedPlugin, selectedLanguage }: ChatComponentProps) {
     const [inputText, setInputText] = useState<string>('');
     const [messages, setMessages] = useState<Message[]>([]);
     const [isUserAtBottom, setIsUserAtBottom] = useState<boolean>(true);
@@ -71,7 +75,9 @@ function ChatComponent({ inputEnable, setInputEnable, activedPlugin, setActivedP
             const url = activedPlugin.PluginHost.startsWith('https')
                 ? activedPlugin.PluginHost
                 : `https://${activedPlugin.PluginHost}`;
+            
             console.log("Payload being sent to backend:", formData);
+
             for (const pair of formData.entries()) {
                 console.log(pair[0], pair[1]);
             }
@@ -79,7 +85,7 @@ function ChatComponent({ inputEnable, setInputEnable, activedPlugin, setActivedP
                 headers: {
                     "Content-Type": "multipart/form-data",
                     'Access-Control-Allow-Origin': '*' // WARNING -> THIS MUST HAVE THE URL/message OF THE ORCHESTRATOR. ELSE IT MIGHT BE PRONE TO ERRORS.
-                },
+                }, timeout: 10000000
             });
             console.log("Response from backend:", response.data);
             const apiResponse = response.data.response;
@@ -94,7 +100,7 @@ function ChatComponent({ inputEnable, setInputEnable, activedPlugin, setActivedP
                 console.log("Entered the display message")
                 setMessages(prevMessages => [
                     ...prevMessages,
-                    { text: apiResponse, language: selectedLanguage, files: [], images: [], sender: 'bot' },
+                    { text: apiResponse, language: selectedLanguage, files: [], images: [], sender: 'bot', orch_config_id: pluginKeys!.orch_config_id, orch_config_key:pluginKeys!.orch_config_key },
                 ]);
                 setInputEnable(true);  // Re-enable input once the message is displayed.
                 setIsLoading(false);
@@ -177,6 +183,9 @@ function ChatComponent({ inputEnable, setInputEnable, activedPlugin, setActivedP
         formData.append("token", token);
         formData.append("language", selectedLanguage);
         formData.append("body","")
+        formData.append("orch_config_id", activedPlugin?.PluginKeys.orch_config_id || "")
+        formData.append("orch_config_key",activedPlugin?.PluginKeys.orch_config_key || "")
+        
         // Add files directly as File objects
         if(uploadedFiles.length>0){
             uploadedFiles.forEach((file) => formData.append("files", file));
@@ -188,7 +197,7 @@ function ChatComponent({ inputEnable, setInputEnable, activedPlugin, setActivedP
         // Update chat messages
         setMessages((prevMessages) => [
             ...prevMessages,
-            { text: inputText, files: uploadedFiles, images: imagePreviews, sender: "user" },
+            { text: inputText, files: uploadedFiles, images: imagePreviews, sender: "user", orch_config_id: activedPlugin?.PluginKeys.orch_config_id, orch_config_key:activedPlugin?.PluginKeys.orch_config_key},
         ]);
         console.log(formData)
         setInputText("");
@@ -371,6 +380,8 @@ function ChatComponent({ inputEnable, setInputEnable, activedPlugin, setActivedP
         formData.append("user_input", ""); // Empty text
         formData.append("body","");
         formData.append("timestamp", getFormattedTimestamp())
+        formData.append("orch_config_id", activedPlugin?.PluginKeys.orch_config_id)
+        formData.append("orch_config_key", activedPlugin?.PluginKeys.orch_config_key)
         fetchMessage(formData);
         console.log("Actived Plugin do useEffect do chatbot", formData);
         console.log("Session expired state at beginning", isSessionExpired);
