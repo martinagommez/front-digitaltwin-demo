@@ -1,0 +1,56 @@
+name: $(var.repository_name)-Supervisor-$(Year)$(Month)$(Day).$(Rev:r)
+
+trigger:
+  branches:
+    include: 
+      - supervisor
+
+  paths:
+    include: 
+      - src/**
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  dockerImageName: 'frontend'
+
+steps:
+  - task: NodeTool@0
+    inputs:
+      versionSpec: '21-alpine3.20'  
+    displayName: 'Install Node.js'
+
+  - script: |
+      cd src
+      npm install
+    displayName: 'Install npm dependencies'
+
+  - script: |
+      cd src
+      npm run build
+    displayName: 'Build React app'
+
+  - task: Docker@2
+    inputs:
+      command: 'build'
+      repository: $(dockerImageName)
+      Dockerfile: '$(Build.SourcesDirectory)/src/Dockerfile'
+      buildContext: '$(Build.SourcesDirectory)/src'  
+    displayName: 'Build Docker image'
+
+  - task: Docker@2
+    inputs:
+      command: 'push'
+      repository: $(dockerImageName)
+      tags: 'latest'
+      containerRegistry: '$(dockerRegistryServiceConnection)'  
+    displayName: 'Push Docker image to registry'
+
+
+  - task: AzureWebAppContainer@1
+    inputs:
+      appName: 'semantic-kernel-agents-orchestrator'
+      dockerImageName: '$(dockerImageName):latest'
+      azureSubscription: '$(azureSubscription)'  
+    displayName: 'Deploy to Azure Web App'
