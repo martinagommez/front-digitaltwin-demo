@@ -60,7 +60,7 @@ stages:
         inputs:
           azureSubscription: 'Innovation Iberia (552c5244-aedc-46b1-9138-7052641b9a00)'
           appName: 'us-frontend-app'
-          resourceGroupName: 'rg_chp'
+          resourceGroupName: 'rg_us'
           # The container to pull from your ACR
           containers: '$(containerRegistry)/$(containerRepository):$(imageTag)'
           # If you need environment variables for the container:
