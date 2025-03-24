@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react-swc'
 export default defineConfig({
   plugins: [react()],
   server: {
-    allowedHosts: ["user-story-generator-demo.azurewebsites.net"]
+    allowedHosts: ["us-app-front-2.azurewebsites.net"]
   }
 })
 
