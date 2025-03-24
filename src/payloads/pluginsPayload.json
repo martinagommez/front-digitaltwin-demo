@@ -1,0 +1,25 @@
+{
+    "NumberOfPlugins": 4,
+    "PluginList": [
+        {
+            "PluginDescription": "Description.",
+            "PluginHost": "This is the Addin Host. It Allows to connect to the addin 1.",
+            "PluginTitle": "Plugin One"
+        },
+        {
+            "PluginDescription": "Description.",
+            "PluginHost": "This is the Addin Host. It Allows to connect to the addin 1.",
+            "PluginTitle": "Plugin Two"
+        },
+        {
+            "PluginDescription": "Description.",
+            "PluginHost": "This is the Addin Host. It Allows to connect to the addin 1.",
+            "PluginTitle": "Plugin Three"
+        },
+        {
+            "PluginDescription": "Description.",
+            "PluginHost": "This is the Addin Host. It Allows to connect to the addin 1.",
+            "PluginTitle": "Plugin Four"
+        }
+    ]
+}

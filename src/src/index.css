@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@import "~@fancyapps/ui/dist/fancybox.css";
+
+@keyframes shake {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-10deg); }
+  50% { transform: rotate(10deg); }
+  75% { transform: rotate(-10deg); }
+}
+
+.animate-shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+html, body {
+    overflow-x: hidden;
+    max-width: 100%;
+  }
