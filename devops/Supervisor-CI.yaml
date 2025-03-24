@@ -1,56 +1,69 @@
-name: $(var.repository_name)-Supervisor-$(Year)$(Month)$(Day).$(Rev:r)
-
 trigger:
   branches:
-    include: 
+    include:
       - supervisor
 
-  paths:
-    include: 
-      - src/**
-
-pool:
-  vmImage: ubuntu-latest
-
 variables:
-  dockerImageName: 'frontend'
+  containerRegistry: 'lisboncr1.azurecr.io'
+  containerRepository: 'supervisorfrontend'
+  imageTag: '$(Build.BuildId)'
 
-steps:
-  - task: NodeTool@0
-    inputs:
-      versionSpec: '21-alpine3.20'  
-    displayName: 'Install Node.js'
+stages:
 
-  - script: |
-      cd src
-      npm install
-    displayName: 'Install npm dependencies'
+- stage: Build
+  displayName: "Build & Push Docker Image"
+  jobs:
+    - job: BuildDocker
+      displayName: "Build Docker Image"
+      pool:
+        vmImage: 'ubuntu-latest'
 
-  - script: |
-      cd src
-      npm run build
-    displayName: 'Build React app'
+      steps:
+      - task: Docker@2
+        displayName: "Login to Azure Container Registry"
+        inputs:
+          containerRegistry: 'Lisbon ACR Push Service Connection'
+          command: 'login'
 
-  - task: Docker@2
-    inputs:
-      command: 'build'
-      repository: $(dockerImageName)
-      Dockerfile: '$(Build.SourcesDirectory)/src/Dockerfile'
-      buildContext: '$(Build.SourcesDirectory)/src'  
-    displayName: 'Build Docker image'
+      - script: |
+          echo "Building Docker image from the specified folder..."
+          docker build \
+            -f src/Dockerfile \
+            -t $(containerRegistry)/$(containerRepository):$(imageTag) \
+            src
 
-  - task: Docker@2
-    inputs:
-      command: 'push'
-      repository: $(dockerImageName)
-      tags: 'latest'
-      containerRegistry: '$(dockerRegistryServiceConnection)'  
-    displayName: 'Push Docker image to registry'
+          echo "Pushing Docker image to ACR..."
+          docker push $(containerRegistry)/$(containerRepository):$(imageTag)
+        displayName: "Build & Push Docker Image"
+
+      - script: |
+          echo "Tagging as latest and pushing..."
+          docker tag $(containerRegistry)/$(containerRepository):$(imageTag) $(containerRegistry)/$(containerRepository):latest
+          docker push $(containerRegistry)/$(containerRepository):latest
+        displayName: "Tag & Push Latest"
 
 
-  - task: AzureWebAppContainer@1
-    inputs:
-      appName: 'semantic-kernel-agents-orchestrator'
-      dockerImageName: '$(dockerImageName):latest'
-      azureSubscription: '$(azureSubscription)'  
-    displayName: 'Deploy to Azure Web App'
+
+- stage: Deploy
+  displayName: "Deploy to Azure Web App"
+  dependsOn: Build
+  jobs:
+    - job: DeployWebApp
+      displayName: "Deploy to Web App for Containers"
+      pool:
+        vmImage: 'ubuntu-latest'
+
+
+      steps:
+      - task: AzureWebAppContainer@1
+        displayName: "Deploy to Web App (Container)"
+        inputs:
+          azureSubscription: 'Innovation Iberia (552c5244-aedc-46b1-9138-7052641b9a00)'
+          appName: 'semantic-kernel-agents-frontend'
+          resourceGroupName: 'rg_supervisor'
+          # The container to pull from your ACR
+          containers: '$(containerRegistry)/$(containerRepository):$(imageTag)'
+          # If you need environment variables for the container:
+          # containerEnvironmentVariables: |
+          #   ENV_VAR1=value1
+          #   ENV_VAR2=value2
