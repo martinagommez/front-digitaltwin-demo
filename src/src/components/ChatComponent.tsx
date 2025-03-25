@@ -85,7 +85,7 @@ function ChatComponent({ inputEnable, setInputEnable, activedPlugin, setActivedP
             const response = await axios.post(url + "/message", formData, {
                 headers: {
                     "Content-Type": "multipart/form-data",
-                    'Access-Control-Allow-Origin': 'https://us-orchestrator.azurewebsites.net/message'
+                    'Access-Control-Allow-Origin': 'https://us-app-orch-us-1.azurewebsites.net/message'
                 }, timeout: 10000000
             });
             console.log("Response from backend:", response.data);
