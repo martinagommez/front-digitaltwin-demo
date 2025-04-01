@@ -5,7 +5,7 @@ trigger:
 
 variables:
   containerRegistry: 'lisboncr1.azurecr.io'
-  containerRepository: 'usfrontend'
+  containerRepository: 'frontagentbuilder'
   imageTag: '$(Build.BuildId)'
 
 stages:
@@ -59,8 +59,8 @@ stages:
         displayName: "Deploy to Web App (Container)"
         inputs:
           azureSubscription: 'Innovation Iberia (552c5244-aedc-46b1-9138-7052641b9a00)'
-          appName: 'us-app-front-2'
-          resourceGroupName: 'rg_us'
+          appName: 'agent-builder-app-front-2'
+          resourceGroupName: 'rg_agent-builder'
           # The container to pull from your ACR
           containers: '$(containerRegistry)/$(containerRepository):$(imageTag)'
           # If you need environment variables for the container:
