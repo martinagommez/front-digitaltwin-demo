@@ -5,7 +5,7 @@ trigger:
 
 variables:
   containerRegistry: 'lisboncr1.azurecr.io'
-  containerRepository: 'frontagentbuilder'
+  containerRepository: 'frontagentbuilder' 
   imageTag: '$(Build.BuildId)'
 
 stages:
