@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react-swc'
 export default defineConfig({
   plugins: [react()],
   server: {
-    allowedHosts: ["semantic-kernel-agents-orchestrator.azurewebsites.net"]
+    allowedHosts: ["agent-builder-app-front-2.azurewebsites.net"]
   }
 })
 
