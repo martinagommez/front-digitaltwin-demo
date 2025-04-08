@@ -10,7 +10,7 @@
     "favicon": "https://png.pngtree.com/png-clipart/20230411/original/pngtree-artificial-intelligence-robot-illustration-png-image_9047239.png",
     "setupApi": "https://agent-builder-app-orch-1.azurewebsites.net/setup_api",
     "inputEnable": true,
-    "preferedLanguage": "pt",
+    "preferedLanguage": "en",
     "enableFeatures": {
         "enableNewChat": true,
         "enableDarkMode": true,
