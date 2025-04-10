@@ -1,0 +1,282 @@
+{
+    "endedText": {
+        "pt-PT": "A sua sessão terminou",
+        "en-US": "Your session has ended",
+        "es-ES": "Tu sesión ha terminado",
+        "fr-FR": "Votre session est terminée",
+        "de-DE": "Ihre Sitzung ist beendet",
+        "it-IT": "La tua sessione è terminata"
+    },
+    "endedSubtext": {
+        "pt-PT": "Atualize para começar um novo chat.",
+        "en-US": "Update to begin a new chat.",
+        "es-ES": "Actualiza para iniciar un nuevo chat.",
+        "fr-FR": "Actualisez pour commencer une nouvelle discussion.",
+        "de-DE": "Aktualisieren, um einen neuen Chat zu starten.",
+        "it-IT": "Aggiorna per iniziare una nuova chat."
+    },
+    "expiredText": {
+        "pt-PT": "A sua sessão expirou",
+        "en-US": "Your session has expired",
+        "es-ES": "Tu sesión ha caducado",
+        "fr-FR": "Votre session a expiré",
+        "de-DE": "Ihre Sitzung ist abgelaufen",
+        "it-IT": "La tua sessione è scaduta"
+    },
+    "expiredSubtext": {
+        "pt-PT": "Atingiu o tempo limite da sessão. Por favor atualize a página.",
+        "en-US": "You've reached the session's limit time. Please update the page.",
+        "es-ES": "Se agotó el tiempo de sesión. Por favor actualice la página.",
+        "fr-FR": "Vous avez atteint la limite de temps de la session. Veuillez actualiser la page.",
+        "de-DE": "Sie haben das Zeitlimit der Sitzung erreicht. Bitte aktualisieren Sie die Seite.",
+        "it-IT": "Hai raggiunto il limite di tempo della sessione. Aggiorna la pagina."
+    },
+    "updateButton": {
+        "pt-PT": "Atualizar",
+        "en-US": "Update",
+        "es-ES": "Actualizar",
+        "fr-FR": "Actualiser",
+        "de-DE": "Aktualisieren",
+        "it-IT": "Aggiorna"
+    },
+    "newChatButton": {
+        "pt-PT": "Novo Chat",
+        "en-US": "New Chat",
+        "es-ES": "Nuevo chat",
+        "fr-FR": "Nouvelle discussion",
+        "de-DE": "Neuer Chat",
+        "it-IT": "Nuova chat"
+    },
+    "darkModeButton": {
+        "pt-PT": "Modo Escuro",
+        "en-US": "Dark Mode",
+        "es-ES": "Modo oscuro",
+        "fr-FR": "Mode sombre",
+        "de-DE": "Dunkler Modus",
+        "it-IT": "Modalità scura"
+    },
+    "lightModeButton": {
+        "pt-PT": "Modo Claro",
+        "en-US": "Light Mode",
+        "es-ES": "Modo de luz",
+        "fr-FR": "Mode clair",
+        "de-DE": "Heller Modus",
+        "it-IT": "Modalità chiara"
+    },
+    "debugModeButton": {
+        "pt-PT": "Modo de Debug",
+        "en-US": "Debug Mode",
+        "es-ES": "Modo de Debug",
+        "fr-FR": "Mode Debug",
+        "de-DE": "Debug-Modus",
+        "it-IT": "Modalità Debug"
+    },
+    "autoAudioPlayButton": {
+        "pt-PT": "Reprodução Automática de Áudio",
+        "en-US": "Auto Audio Play",
+        "es-ES": "Reproducción Automática de Audio",
+        "fr-FR": "Lecture Audio Automatique",
+        "de-DE": "Automatische Audiowiedergabe",
+        "it-IT": "Riproduzione Automatica Audio"
+    },
+    "audioPlayButton": {
+        "pt-PT": "Reproduzir Áudio",
+        "en-US": "Play Audio",
+        "es-ES": "Reproducir Audio",
+        "fr-FR": "Lire l'audio",
+        "de-DE": "Audio Abspielen",
+        "it-IT": "Riproduci Audio"
+    },
+    "audioPauseButton": {
+        "pt-PT": "Pausar Áudio",
+        "en-US": "Pause Audio",
+        "es-ES": "Pausar Audio",
+        "fr-FR": "Mettre l'audio en pause",
+        "de-DE": "Audio Pausieren",
+        "it-IT": "Pausa Audio"
+    },
+    "languageSelectButton": {
+        "pt-PT": "Selecionar Idioma",
+        "en-US": "Select Language",
+        "es-ES": "Seleccionar Idioma",
+        "fr-FR": "Sélectionner la langue",
+        "de-DE": "Sprache auswählen",
+        "it-IT": "Seleziona lingua"
+    },
+    "uploadFilesButton": {
+        "pt-PT": "Carregar ficheiros",
+        "en-US": "Upload Files",
+        "es-ES": "Subir archivos",
+        "fr-FR": "Téléverser des fichiers",
+        "de-DE": "Dateien hochladen",
+        "it-IT": "Carica file"
+    },
+    "uploadImagesButton": {
+        "pt-PT": "Carregar imagens",
+        "en-US": "Upload Images",
+        "es-ES": "Subir imágenes",
+        "fr-FR": "Téléverser des images",
+        "de-DE": "Bilder hochladen",
+        "it-IT": "Carica immagini"
+    },
+    "audioRecordingButton": {
+        "pt-PT": "Começar gravação de áudio",
+        "en-US": "Start Audio Recording",
+        "es-ES": "Comenzar grabación de audio",
+        "fr-FR": "Commencer l'enregistrement audio",
+        "de-DE": "Audioaufnahme starten",
+        "it-IT": "Inizia registrazione audio"
+    },
+    "chatPlaceholder": {
+        "pt-PT": "Escreva aqui a sua mensagem...",
+        "en-US": "Write your message here...",
+        "es-ES": "Escribe tu mensaje aquí...",
+        "fr-FR": "Écrivez votre message ici...",
+        "de-DE": "Schreiben Sie Ihre Nachricht hier...",
+        "it-IT": "Scrivi qui il tuo messaggio..."
+    },
+    "availableLanguagesTitle": {
+        "pt-PT": "Idiomas disponíveis",
+        "en-US": "Available languages",
+        "es-ES": "Idiomas disponibles",
+        "fr-FR": "Langues disponibles",
+        "de-DE": "Verfügbare Sprachen",
+        "it-IT": "Lingue disponibili"
+    },
+    "analysisTitle": {
+        "pt-PT": "Análise da Conversa",
+        "en-US": "Conversation analysis",
+        "es-ES": "Análisis de la conversación",
+        "fr-FR": "Analyse de la conversation",
+        "de-DE": "Gesprächsanalyse",
+        "it-IT": "Analisi della conversazione"
+    },
+    "thoughtProcess": {
+        "pt-PT": "Processo de Pensamento",
+        "en-US": "Thought Process",
+        "es-ES": "Proceso de pensamiento",
+        "fr-FR": "Processus de réflexion",
+        "de-DE": "Denkprozess",
+        "it-IT": "Processo di pensiero"
+    },
+    "supportingContent": {
+        "pt-PT": "Conteúdo de Apoio",
+        "en-US": "Supporting Content",
+        "es-ES": "Contenido de apoyo",
+        "fr-FR": "Contenu de soutien",
+        "de-DE": "Unterstützende Inhalte",
+        "it-IT": "Contenuti di supporto"
+    },
+    "citations": {
+        "pt-PT": "Citações",
+        "en-US": "Citations",
+        "es-ES": "Citas",
+        "fr-FR": "Citations",
+        "de-DE": "Quellenangaben",
+        "it-IT": "Citazioni"
+    },
+    "noContentFound": { 
+        "pt-PT": "Nenhum conteúdo encontrado.",
+        "en-US": "There was no content found.",
+        "es-ES": "No se encontró contenido.",
+        "fr-FR": "Aucun contenu trouvé.",
+        "de-DE": "Es wurde kein Inhalt gefunden.",
+        "it-IT": "Nessun contenuto trovato."
+    },
+    "citationDocument": {
+        "pt-PT": "Documento",
+        "en-US": "Document",
+        "es-ES": "Documento",
+        "fr-FR": "Document",
+        "de-DE": "Dokument",
+        "it-IT": "Documento"
+    },
+    "downloadDocument": {
+        "pt-PT": "Descarregar Documento",
+        "en-US": "Download Document",
+        "es-ES": "Descargar Documento",
+        "fr-FR": "Télécharger le document",
+        "de-DE": "Dokument herunterladen",
+        "it-IT": "Scarica Documento"
+    },
+    "openLink": {
+        "pt-PT": "Abrir link",
+        "en-US": "Open Link",
+        "es-ES": "Abrir enlace",
+        "fr-FR": "Ouvrir le lien",
+        "de-DE": "Link öffnen",
+        "it-IT": "Apri link"
+    },
+    "deleteAllButton": {
+        "pt-PT": "Apagar tudo",
+        "en-US": "Delete all",
+        "es-ES": "Eliminar todo",
+        "fr-FR": "Supprimer tout",
+        "de-DE": "Alles löschen",
+        "it-IT": "Elimina tutto"
+    },
+    "uploadFilesText": {
+        "pt-PT": "Enviar arquivos",
+        "en-US": "Upload Files",
+        "es-ES": "Subir archivos",
+        "fr-FR": "Téléverser des fichiers",
+        "de-DE": "Dateien hochladen",
+        "it-IT": "Carica file"
+    },
+    "uploadedFilesText": {
+        "pt-PT": "Arquivos enviados",
+        "en-US": "Uploaded Files",
+        "es-ES": "Archivos subidos",
+        "fr-FR": "Fichiers téléversés",
+        "de-DE": "Hochgeladene Dateien",
+        "it-IT": "File caricati"
+    },
+    "processedFilesText": {
+        "pt-PT": "Arquivos processados",
+        "en-US": "Processed Files",
+        "es-ES": "Archivos procesados",
+        "fr-FR": "Fichiers traités",
+        "de-DE": "Verarbeitete Dateien",
+        "it-IT": "File elaborati"
+    },
+    "dragDropText": {
+        "pt-PT": "Arraste e solte seus arquivos aqui ou clique para enviar",
+        "en-US": "Drag and drop your files here or click to upload",
+        "es-ES": "Arrastra y suelta tus archivos aquí o haz clic para subirlos",
+        "fr-FR": "Glissez-déposez vos fichiers ici ou cliquez pour téléverser",
+        "de-DE": "Ziehen Sie Ihre Dateien hierher oder klicken Sie, um sie hochzuladen",
+        "it-IT": "Trascina e rilascia i tuoi file qui o clicca per caricare"
+    },
+    "noUploadText": {
+        "pt-PT": "Nenhum arquivo enviado",
+        "en-US": "No files uploaded",
+        "es-ES": "No se han subido archivos",
+        "fr-FR": "Aucun fichier téléversé",
+        "de-DE": "Keine Dateien hochgeladen",
+        "it-IT": "Nessun file caricato"
+    },
+    "noProcessText": {
+        "pt-PT": "Nenhum arquivo processado",
+        "en-US": "No files processed",
+        "es-ES": "No se han procesado archivos",
+        "fr-FR": "Aucun fichier traité",
+        "de-DE": "Keine Dateien verarbeitet",
+        "it-IT": "Nessun file elaborato"
+    },
+    "messageText": {
+        "pt-PT": "Mensagem",
+        "en-US": "Message",
+        "es-ES": "Mensaje",
+        "fr-FR": "Message",
+        "de-DE": "Nachricht",
+        "it-IT": "Messaggio"
+    },
+    "noPreviewText": {
+        "pt-PT": "Pré-visualização não suportada para este tipo de arquivo.",
+        "en-US": "Preview not supported for this file type.",
+        "es-ES": "Vista previa no compatible para este tipo de archivo.",
+        "fr-FR": "Aperçu non pris en charge pour ce type de fichier.",
+        "de-DE": "Vorschau für diesen Dateityp nicht unterstützt.",
+        "it-IT": "Anteprima non supportata per questo tipo di file."
+    }
+}
