@@ -1,7 +1,7 @@
 trigger:
   branches:
     include:
-      - agentbuilder2
+      - x
 
 variables:
   containerRegistry: 'lisboncr1.azurecr.io'
