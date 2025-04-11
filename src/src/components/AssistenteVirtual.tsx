@@ -128,12 +128,15 @@ function AssistenteVirtual() {
 				console.log(plugins.PluginList[0]); // new for seeing what the plugin contains
 				setInputEnable(true);
 				// plugins.PluginList[0].PluginType = 'chatbot';
-				setPluginType(plugins.PluginList[0].PluginType)
-				setPluginKeys(plugins.PluginList[0].PluginKeys)
-			} else {
-				console.log("Tenho mais que um plugin!",plugins.PluginList);
+				setPluginType(plugins.PluginList[0].PluginType);
+				setPluginKeys(plugins.PluginList[0].PluginKeys);
+			} else if (plugins?.NumberOfPlugins > 1) {
+				console.log("Number of Plugins:", plugins?.NumberOfPlugins);
+				console.log("Tenho mais que um plugin!", plugins.PluginList);
 				plugins.PluginList[0].PluginType = 'chatbot';
 				plugins.PluginList[1].PluginType = 'files';
+			} else {
+				return;
 			}
 		} catch (error) {
 			console.error('Failed to fetch plugins:', error);
@@ -522,7 +525,7 @@ function AssistenteVirtual() {
 							${isChatSidebarOpen ? 'w-full' : 'max-w-4xl'}
 							`}> 
 							<ChatComponent 
-								activedPlugin={activedPlugin} setActivedPlugin={setActivedPlugin} 
+								activedPlugin={activedPlugin} setActivedPlugin={setActivedPlugin}
 								pluginKeys={pluginKeys} setPluginKeys={setPluginKeys}
 								inputEnable={inputEnable} setInputEnable={setInputEnable}
 								debugMode={debugMode} setDebugMode={setDebugMode}

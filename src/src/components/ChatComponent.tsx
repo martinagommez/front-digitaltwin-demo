@@ -31,14 +31,14 @@ interface Message {
 interface ChatComponentProps {
     inputEnable: boolean;
     setInputEnable: React.Dispatch<React.SetStateAction<boolean>>;
-    pluginKeys: PluginKeys | null;
-    setPluginKeys: React.Dispatch<React.SetStateAction<PluginKeys | null>>;
     debugMode: boolean;
     setDebugMode: React.Dispatch<React.SetStateAction<boolean>>; 
     isChatSidebarOpen: boolean;
     setIsChatSidebarOpen: (open: boolean) => void;
     activedPlugin: PluginMeta | null;
     setActivedPlugin: React.Dispatch<React.SetStateAction<PluginMeta | null>>;
+    pluginKeys: PluginKeys | null;
+    setPluginKeys: React.Dispatch<React.SetStateAction<PluginKeys | null>>;
     selectedLanguage: string;
     darkMode: boolean;
     autoAudioPlay: boolean;
@@ -173,7 +173,7 @@ function ChatComponent({
                             id: new Date().getTime().toString(), 
                             files: [], 
                             images: [], 
-                            sender: 'bot', 
+                            sender: 'bot',
                             orch_config_id: pluginKeys!.orch_config_id, 
                             orch_config_key: pluginKeys!.orch_config_key
                         },
@@ -236,7 +236,7 @@ function ChatComponent({
         formData.append("session_id", sessionId);
         formData.append("token", token);
         formData.append("language", selectedLanguage);
-        formData.append("body","")
+        formData.append("body", "")
         formData.append("orch_config_id", activedPlugin?.PluginKeys.orch_config_id || "")
         formData.append("orch_config_key", activedPlugin?.PluginKeys.orch_config_key || "")
         // Add files directly as File objects
@@ -256,9 +256,9 @@ function ChatComponent({
                 id: '', 
                 files: uploadedFiles, 
                 images: imagePreviews,
-                sender: "user", 
-                orch_config_id: activedPlugin?.PluginKeys.orch_config_id, 
-                orch_config_key:activedPlugin?.PluginKeys.orch_config_key 
+                sender: "user",
+                orch_config_id: activedPlugin?.PluginKeys.orch_config_id,
+                orch_config_key:activedPlugin?.PluginKeys.orch_config_key
             },
         ]);
         console.log(formData)
@@ -549,6 +549,8 @@ function ChatComponent({
         formData.append("language",selectedLanguage);
         console.log("language first message", selectedLanguage);
         formData.append("timestamp", getFormattedTimestamp());
+        formData.append("orch_config_id", activedPlugin?.PluginKeys.orch_config_id ?? "");
+        formData.append("orch_config_key", activedPlugin?.PluginKeys.orch_config_key ?? "");
         fetchMessage(formData);
         console.log("Actived Plugin do useEffect do chatbot", formData);
         console.log("Session expired state at beginning", isSessionExpired);
