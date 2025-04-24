@@ -8,7 +8,7 @@
     "pluginsTitle": "Choose one of these options",
     "logo": "https://png.pngtree.com/png-clipart/20240508/original/pngtree-artificial-intelligence-logo-png-image_15034966.png",
     "favicon": "https://png.pngtree.com/png-clipart/20230411/original/pngtree-artificial-intelligence-robot-illustration-png-image_9047239.png",
-    "setupApi": "https://pps-conversation-app-orchestrator-1.azurewebsites.net/setup_api",
+    "setupApi": "https://orch-base-app-orch-base-1.azurewebsites.net/setup_api",
     "inputEnable": true,
     "preferedLanguage": "en",
     "enableFeatures": {
