@@ -1,7 +1,7 @@
 trigger:
   branches:
     include:
-      - pps
+      - orch-base-front
 
 variables:
   containerRegistry: 'lisboncr1.azurecr.io'
