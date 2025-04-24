@@ -88,7 +88,7 @@ function AssistenteVirtual() {
 	// Fetch dos plugins
 	const fetchPlugins = async () => {
 		try {
-			const response = await axios.get(setupApi, {
+			const response = await axios.get(setupApi+"/setup_api", {
 				headers: {
 					mode: 'no-cors',
 					'Content-Type': 'application/json',
