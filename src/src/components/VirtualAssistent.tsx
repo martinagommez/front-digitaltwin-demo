@@ -16,7 +16,7 @@ type Language = {
 	flag: string;
 }
 
-function AssistenteVirtual() {
+function VirtualAssistent() {
 	const [inputEnable, setInputEnable] = useState<boolean>(true);
 	const [debugMode, setDebugMode] = useState<boolean>(false);
 	const [audioEnable, setAudioEnable] = useState<boolean>(false);
@@ -640,4 +640,4 @@ function AssistenteVirtual() {
 	);
 }
 
-export default AssistenteVirtual;
+export default VirtualAssistent;

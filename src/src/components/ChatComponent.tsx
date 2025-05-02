@@ -26,6 +26,7 @@ interface Message {
     agent?: string;
     orch_config_id: string|undefined;
     orch_config_key: string|undefined;
+    formFields?: Record<string, string>; 
 };
 
 interface ChatComponentProps {
@@ -43,6 +44,18 @@ interface ChatComponentProps {
     darkMode: boolean;
     autoAudioPlay: boolean;
 }
+
+type FormField = {
+    label: string;
+    type: string; // 'text', 'textarea', etc.
+    name: string;
+    placeholder?: string;
+};
+
+type Template = {
+    title: string;
+    fields: (FormField | { title: string; fields: FormField[] })[]; // handle single fields and grouped fields
+};
 
 function ChatComponent({ 
     inputEnable, setInputEnable, 
@@ -69,16 +82,20 @@ function ChatComponent({
     const [uploadedImages, setUploadedImages] = useState<File[]>([]);
     const [imagePreviews, setImagePreviews] = useState<string[]>([]);
     const [isConfigLoaded, setIsConfigLoaded] = useState<boolean>(false);
+    const [answer, setAnswer] = useState<ChatAppResponse | null>(null);
+    const [templateForm, setTemplateForm] = useState<boolean>(false);
+    const [formTemplate, setFormTemplate] = useState<Template | null>(null);
+    const [formValues, setFormValues] = useState<Record<string, string>>({});
+    const [formError, setFormError] = useState<boolean>(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const imageInputRef = useRef<HTMLInputElement>(null);
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
     const chatContainerRef = useRef<HTMLDivElement>(null);
-    const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+    const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const currentPlayingMessageIdRef = useRef<string | null>(null);
     const lastPlayedMessageRef = useRef<string | null>(null);
     const isPlayingRef = useRef<boolean>(false);
-    const [answer, setAnswer] = useState<ChatAppResponse | null>(null);
     
     const exampleAnswer: ChatAppResponse = {
         context: {
@@ -106,11 +123,58 @@ function ChatComponent({
             ]
         }
     };
-    
+
+    const exampleTemplate: Template = {
+        title: 'User Feedback Form',
+        fields: [
+        {
+            title: 'Orchestration',
+            fields: [
+                {
+                    label: 'Orchestration Name',
+                    type: 'text',
+                    name: 'OrchestrationName',
+                    placeholder: "Your orchestration's name",
+                },
+                {
+                    label: 'Orchestration Description',
+                    type: 'textarea',
+                    name: 'OrchestrationDescription',
+                    placeholder: "Your orchestration's description",
+                },
+                {
+                    label: 'Orchestration Type',
+                    type: 'textarea',
+                    name: 'OrchestrationType',
+                    placeholder: "Your orchestration's type",
+                },
+            ],
+        },
+        {
+            label: 'Agent Name',
+            type: 'text',
+            name: 'AgentName',
+            placeholder: "Your agent's name",
+        },
+        {
+            label: 'Intent',
+            type: 'text',
+            name: 'Intent',
+            placeholder: "Your agent's functionality",
+        },
+        {
+            label: 'System Prompt',
+            type: 'textarea',
+            name: 'SystemPrompt',
+            placeholder: "Your agent's behavior prompt",
+        },
+        ]
+    }
+
     useEffect(() => {
         console.log("Setting answer:", exampleAnswer);
         setAnswer(exampleAnswer);
-    }, []); // Runs only once when component mountssetAnswer(exampleAnswer);
+    }, []); // Runs only once when component mounts setAnswer(exampleAnswer);
 
     // Get data from context
     const { speechKey, speechRegion, voices, languageData } = useLanguageContext();
@@ -138,21 +202,34 @@ function ChatComponent({
                 : `https://${activedPlugin.PluginHost}`;
             console.log("Payload being sent to backend:", formData);
             for (const pair of formData.entries()) {
-                console.log(pair[0], pair[1]);
+                console.log("   ➤", pair[0], pair[1]);
             }
 
             const response = await axios.post(url + "/message", formData, {
                 headers: {
                     "Content-Type": "multipart/form-data",
-                    'Access-Control-Allow-Origin': '*' // WARNING -> THIS MUST HAVE THE URL/message OF THE ORCHESTRATOR. ELSE IT MIGHT BE PRONE TO ERRORS.
+                    'Access-Control-Allow-Origin': '*' // WARNING -> THIS MUST HAVE THE URL/message OF THE ORCHESTRATOR. ELSE IT MIGHT BE PRONE TO ERRORS. Is dangerous in production if not tightly controlled.
                 }, timeout: 10000000
             });
             console.log("Response from backend", response);
 
             const apiResponse = response.data.response;
-
             setSessionId(response.data.session_id);
             setToken(response.data.token);
+
+            // if (response.data.template) {
+            //     setTemplateForm(true);
+            //     setFormTemplate(response.data.template);
+            //     console.log("Form Template set from backend:", response.data.template);
+            // } else {
+            //     setTemplateForm(false); // no template in this response
+            // }
+
+            if (true) { // temporary mock for testing
+                setTemplateForm(true);
+                setFormTemplate(exampleTemplate);
+                console.log("Mock Form Template set:", exampleTemplate);
+            }            
 
             // const data: ChatAppResponse = await response.data;
             // setAnswer(data);
@@ -227,6 +304,65 @@ function ChatComponent({
         }
     };
 
+    useEffect(() => {
+        // Mock setting template, in a real scenario, you would fetch it from the backend
+        setFormTemplate(exampleTemplate);
+        setTemplateForm(true); // Make sure the form displays when template is loaded
+    }, []);
+
+    const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { name, value } = e.target;
+        setFormValues(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleFormSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const allFields = formTemplate!.fields.flatMap(field =>
+            'fields' in field ? field.fields : [field]
+        );
+        const missingFields = allFields.filter(f => !formValues[f.name]?.trim());
+        if (missingFields.length > 0) {
+            setFormError(true);
+            return;
+        }
+        setFormError(false);
+        console.log("Submitted form data:", formValues);
+        // Push it into the messages state as a user message
+        setMessages(prevMessages => [
+            ...prevMessages,
+            {
+                text: "",
+                sender: 'user',
+                id: new Date().getTime().toString(),
+                language: selectedLanguage,
+                files: [],
+                images: [],
+                orch_config_id: pluginKeys!.orch_config_id,
+                orch_config_key: pluginKeys!.orch_config_key,
+                formFields: formValues
+            }
+        ]);
+        // Reset the form
+        setFormTemplate(null);
+        setFormValues({});
+        const formData = new FormData();
+        // Add keys expected by fetchMessage
+        formData.append("user_input", inputText || "");
+        formData.append("timestamp", getFormattedTimestamp());
+        formData.append("session_id", sessionId);
+        formData.append("token", token);
+        formData.append("language", selectedLanguage);
+        formData.append("body", "")
+        formData.append("orch_config_id", pluginKeys!.orch_config_id);
+        formData.append("orch_config_key", pluginKeys!.orch_config_key);
+        // 👉 Convert formValues to FormData and call fetchMessage
+        for (const key in formValues) {
+            formData.append(key, formValues[key]);
+        }
+        await fetchMessage(formData);
+        console.log("Handle Form Send", formData);
+    };
+
     // Envio da mensagem
     const handleSend = async () => {
         if (!inputText.trim()) return;
@@ -268,9 +404,9 @@ function ChatComponent({
         setImagePreviews([]);
         setInputEnable(false);
         await fetchMessage(formData);
-        console.log("Handle Send",formData);
+        console.log("Handle Message Send", formData);
     };
-    
+
     const copyToClipboard = async (messageText: string, messageId: string) => {
         try {
             await navigator.clipboard.writeText(messageText);
@@ -303,17 +439,15 @@ function ChatComponent({
         ) {
             lastPlayedMessageRef.current = lastMessage.id;
             isPlayingRef.current = true;
-    
             playChatbotResponse(lastMessage.text, lastMessage.id).finally(() => {
                 isPlayingRef.current = false;
             });
         }
     }, [debouncedMessages, autoAudioPlay]);
-    
 
     // Function to get the correct Azure voice for the selected language
     const getAzureVoice = (language: string) => {
-        console.log( "getAzureVoice", language)
+        console.log( "🗣️ getAzureVoice", language)
         return voices[language] || "en-US-JennyNeural"; // Default to English if not found
     };
 
@@ -435,6 +569,7 @@ function ChatComponent({
                     if (reader.result) {
                         previews.push(reader.result as string);
                         setImagePreviews((prevPreviews) => {
+                            //Deduplication
                             const uniquePreviews = [...prevPreviews, ...previews].filter(
                                 (preview, index, self) => self.indexOf(preview) === index
                             );
@@ -463,9 +598,6 @@ function ChatComponent({
     const triggerFileInput = () => fileInputRef.current?.click();
     const triggerImageInput = () => imageInputRef.current?.click();
 
-
-    // localStorage.setItem('language', 'en');
-    
     // Extract text values from JSON
     const expiredText = languageData?.expiredText?.[selectedLanguage] || languageData?.expiredText?.['en-US'];
     const expiredSubText = languageData?.expiredSubText?.[selectedLanguage] || languageData?.expiredSubText?.['en-US'];
@@ -478,6 +610,8 @@ function ChatComponent({
     const audioPlayButton = languageData?.audioPlayButton?.[selectedLanguage] || languageData?.audioPlayButton?.['en-US'];
     const audioPauseButton = languageData?.audioPauseButton?.[selectedLanguage] || languageData?.audioPauseButton?.['en-US'];
     const analysisTitle = languageData?.analysisTitle?.[selectedLanguage] || languageData?.analysisTitle?.['en-US'];
+    const submitForm = languageData?.submitForm?.[selectedLanguage] || languageData?.submitForm?.['en-US'];
+    const submitFormError = languageData?.submitFormError?.[selectedLanguage] || languageData?.submitFormError?.['en-US'];
 
     //  Valores defualt para as features configuráveis pelo json
 	const [featuresStates, setFeaturesStates] = useState({
@@ -572,12 +706,11 @@ function ChatComponent({
     }, [isEndChat]);
 
     useEffect(() => {
-        if (textareaRef.current) {
-            textareaRef.current.style.height = "auto"; // Reset height to recalculate
-            textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`; // Adjust height
+        if (textAreaRef.current) {
+            textAreaRef.current.style.height = "auto"; // Reset height to recalculate
+            textAreaRef.current.style.height = `${textAreaRef.current.scrollHeight}px`; // Adjust height
         }
     }, [inputText]); // Runs every time inputText changes (including speech-to-text updates)
-
 
     return (
         <div className="flex flex-col md:flex-row w-full h-full"> {/* Main flex container */}
@@ -672,11 +805,23 @@ function ChatComponent({
                                     </div>
 
                                     {/* Message Text */}
-                                    <div className="markdown">
-                                        <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
-                                            {message.text}
-                                        </ReactMarkdown>
-                                    </div>
+                                    {message.formFields ? (
+                                        <div className="text-left">
+                                            {Object.entries(message.formFields).map(([key, value]) => (
+                                                <div key={key} className="mb-1">
+                                                    <span className="font-bold">{key}: </span>
+                                                    <span className="whitespace-pre-wrap">{value}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        // Regular markdown-rendered message
+                                        <div className="markdown">
+                                            <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
+                                                {message.text}
+                                            </ReactMarkdown>
+                                        </div>
+                                    )}
 
                                     {/* Display sent images in chat area */}
                                     {message.images && message.images.length > 0 && (
@@ -779,7 +924,7 @@ function ChatComponent({
                         )}
 
                         {/* Input Area */}
-                        {isConfigLoaded && (
+                        {!templateForm && isConfigLoaded && (
                             <div className="relative w-full flex">
                                 {inputEnable ? (
                                 // When inputEnable is true
@@ -795,6 +940,7 @@ function ChatComponent({
                                             [&::-webkit-scrollbar-thumb]:hover:bg-neutral-500
                                             dark:[&::-webkit-scrollbar-thumb]:hover:bg-neutral-900"
                                         >
+                                            {/* Selected files */}
                                             {uploadedFiles.map((file, index) => (
                                                 <div
                                                     key={index}
@@ -816,6 +962,7 @@ function ChatComponent({
                                                     </button>
                                                 </div>
                                             ))}
+                                            {/* Selected images */}
                                             {imagePreviews.map((image, index) => (
                                                 <div
                                                     key={index}
@@ -838,7 +985,7 @@ function ChatComponent({
                                         </div>
                                         {/* Text area */}
                                         <textarea
-                                            ref={textareaRef}
+                                            ref={textAreaRef}
                                             className="w-full max-h-40 text-sm md:text-base bg-transparent border-none focus:outline-none focus:border-none resize-none overflow-auto p-2
                                                 scroll-smooth
                                                 [&::-webkit-scrollbar]:w-2
@@ -964,6 +1111,107 @@ function ChatComponent({
                                         </div>
                                     </div>
                                 )}
+                            </div>
+                        )}
+
+                        {/* Template Form Area */}
+                        {templateForm && formTemplate && (
+                            <div className="relative w-full flex">
+                                <div className="relative w-full h-auto text-sm md:text-base p-2 resize-none overflow-auto bg-neutral-100 dark:bg-neutral-700 dark:text-white">
+                                    <div className="w-full max-h-80 text-sm md:text-base bg-transparent border-none focus:outline-none focus:border-none resize-none overflow-auto p-2
+                                                scroll-smooth
+                                                [&::-webkit-scrollbar]:w-2
+                                                [&::-webkit-scrollbar-track]:rounded-full
+                                                [&::-webkit-scrollbar-track]:bg-[#d0d0d0]/20
+                                                dark:[&::-webkit-scrollbar-track]:bg-[#414141]/20
+                                                [&::-webkit-scrollbar-thumb]:rounded-full
+                                                [&::-webkit-scrollbar-thumb]:bg-[#d0d0d0]
+                                                dark:[&::-webkit-scrollbar-thumb]:bg-[#414141]
+                                                [&::-webkit-scrollbar-thumb]:hover:bg-[#acabab]
+                                                dark:[&::-webkit-scrollbar-thumb]:hover:bg-[#2a2a2a]">
+                                        <form className="space-y-4 p-4 bg-transparent">
+                                            <h2 className="text-xl font-bold mb-4">{formTemplate.title}</h2>
+                                            {formTemplate.fields.map((field, index) =>
+                                                'fields' in field ? (
+                                                    <div key={index} className="space-y-4">
+                                                        <h3 className="font-semibold text-lg">{field.title}</h3>
+                                                        <div className="flex space-x-4">
+                                                            {field.fields.map((subField, subIndex) => (
+                                                                <div key={subIndex} className="flex flex-col w-1/2">
+                                                                    <label htmlFor={subField.name} className="mb-1 font-medium">
+                                                                        {subField.label}
+                                                                    </label>
+                                                                    {subField.type === 'textarea' ? (
+                                                                        <textarea
+                                                                            required
+                                                                            id={subField.name}
+                                                                            name={subField.name}
+                                                                            placeholder={subField.placeholder}
+                                                                            className="p-2 bg-white dark:bg-neutral-800 text-black dark:text-white border rounded"
+                                                                            onChange={handleFormChange}
+                                                                            value={formValues[subField.name] || ""}
+                                                                        />
+                                                                    ) : (
+                                                                        <input
+                                                                            required
+                                                                            id={subField.name}
+                                                                            type={subField.type}
+                                                                            name={subField.name}
+                                                                            placeholder={subField.placeholder}
+                                                                            className="p-2 bg-white dark:bg-neutral-800 text-black dark:text-white border rounded"
+                                                                            onChange={handleFormChange}
+                                                                            value={formValues[subField.name] || ""}
+                                                                        />
+                                                                    )}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <div key={index} className="flex flex-col">
+                                                    <label htmlFor={field.name} className="mb-1 font-medium">
+                                                        {field.label}
+                                                    </label>
+                                                    {field.type === 'textarea' ? (
+                                                        <textarea
+                                                            required
+                                                            id={field.name}
+                                                            name={field.name}
+                                                            placeholder={field.placeholder}
+                                                            className="p-2 bg-white dark:bg-neutral-800 text-black dark:text-white border rounded"
+                                                            onChange={handleFormChange}
+                                                            value={formValues[field.name] || ""}
+                                                        />
+                                                    ) : (
+                                                        <input
+                                                            required
+                                                            id={field.name}
+                                                            type={field.type}
+                                                            name={field.name}
+                                                            placeholder={field.placeholder}
+                                                            className="p-2 bg-white dark:bg-neutral-800 text-black dark:text-white border rounded"
+                                                            onChange={handleFormChange}
+                                                            value={formValues[field.name] || ""}
+                                                        />
+                                                    )}
+                                                    </div>
+                                                )
+                                            )}
+                                            {formError && (
+                                                <p className="text-base text-red-700 dark:text-red-500 font-serif">
+                                                    ❌ {submitFormError}
+                                                </p>
+                                            )}
+                                            <button
+                                                type="submit"
+                                                onClick={handleFormSubmit}
+                                                className="px-4 py-2 bg-black dark:bg-white text-white dark:text-black rounded-full hover:bg-neutral-800 dark:hover:bg-neutral-100"
+                                            >
+                                                {submitForm}
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
                             </div>
                         )}
 

@@ -31,6 +31,22 @@
         "de-DE": "Sie haben das Zeitlimit der Sitzung erreicht. Bitte aktualisieren Sie die Seite.",
         "it-IT": "Hai raggiunto il limite di tempo della sessione. Aggiorna la pagina."
     },
+    "submitForm": {
+        "pt-PT": "Enviar",
+        "en-US": "Submit",
+        "es-ES": "Enviar",
+        "fr-FR": "Soumettre",
+        "de-DE": "Absenden",
+        "it-IT": "Invia"
+    },
+    "submitFormError": {
+        "pt-PT": "Todos os campos têm de ser preenchidos para poder submeter.",
+        "en-US": "All fields must be filled out before submitting.",
+        "es-ES": "Todos los campos deben ser completados antes de enviar.",
+        "fr-FR": "Tous les champs doivent être remplis avant la soumission.",
+        "de-DE": "Alle Felder müssen ausgefüllt sein, bevor das Formular abgeschickt werden kann.",
+        "it-IT": "Tutti i campi devono essere compilati prima dell'invio."
+    },
     "updateButton": {
         "pt-PT": "Atualizar",
         "en-US": "Update",

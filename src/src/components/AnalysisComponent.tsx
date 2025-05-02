@@ -95,49 +95,54 @@ const AnalysisComponent: React.FC<AnalysisComponentProps> = ({ answer, selectedL
                         dark:[&::-webkit-scrollbar-thumb]:hover:bg-[#2a2a2a]"
                 >
                     <ul className="px-2 py-0 inline-block relative">
-                        {/* Vertical line */}
-                        <div className="absolute left-[25px] top-0 bottom-0 w-[2px] bg-neutral-700 dark:bg-neutral-300"></div>
-                        {answer?.context?.thoughts?.map((thought, idx) => (
-                            <li
-                                key={idx}
-                                className="relative list-none ml-5 min-h-[3.125em] pl-3 pb-8"
-                            >
-                                {/* Bullet circle */}
-                                <span className="absolute left-[-14px] top-0 h-6 w-6 rounded-full border-4 border-white dark:border-neutral-800 bg-neutral-700 dark:bg-neutral-300 z-10"></span>
-                                {/* Title */}
-                                <div className="text-black dark:text-white text-sm md:text-base text-left mb-2 font-semibold pl-4">
-                                    {thought.title || 'No title'}
-                                </div>
-                                {/* Properties if any */}
-                                {thought.props && (
-                                    <div className="flex flex-wrap gap-2 mb-2 pl-4">
-                                        {Object.entries(thought.props).map(([key, value]) => (
-                                            <span
-                                                key={key}
-                                                className="bg-neutral-200 dark:bg-neutral-700 text-neutral-800 dark:text-white text-xs px-2 py-1 rounded-full"
-                                            >
-                                                {key}: {value}
-                                            </span>
-                                        ))}
+                        {answer?.context?.thoughts?.map((thought, idx) => {
+                            const isLast = idx === answer.context.thoughts.length - 1;
+                            return (
+                                <li
+                                    key={idx}
+                                    className="relative list-none ml-5 min-h-[3.125em] pl-3 pb-8"
+                                >
+                                    {/* Vertical line (only if not last) */}
+                                    {!isLast && (
+                                        <div className="absolute left-[-3px] top-6 bottom-0 w-[2px] bg-neutral-700 dark:bg-neutral-300"></div>
+                                    )}
+                                    {/* Bullet circle */}
+                                    <span className="absolute left-[-14px] top-0 h-6 w-6 rounded-full border-4 border-white dark:border-neutral-800 bg-neutral-700 dark:bg-neutral-300 z-10"></span>
+                                    {/* Title */}
+                                    <div className="text-black dark:text-white text-sm md:text-base text-left mb-2 font-semibold pl-4">
+                                        {thought.title || 'No title'}
                                     </div>
-                                )}
-                                {/* Description */}
-                                {typeof thought.description === "string" ? (
-                                    <p className="text-xs text-left text-neutral-700 dark:text-neutral-300 whitespace-pre-wrap pl-4">
-                                        {thought.description}
-                                    </p>
-                                ) : (
-                                    <SyntaxHighlighter
-                                        language="json"
-                                        style={a11yLight}
-                                        customStyle={{padding: "1em", borderRadius: "0.5em", maxHeight: "18.75em", overflow: "auto"}}
-                                        wrapLongLines
-                                    >
-                                        {JSON.stringify(thought.description, null, 2)}
-                                    </SyntaxHighlighter>
-                                )}
-                            </li>
-                        ))}
+                                    {/* Properties if any */}
+                                    {thought.props && (
+                                        <div className="flex flex-wrap gap-2 mb-2 pl-4">
+                                            {Object.entries(thought.props).map(([key, value]) => (
+                                                <span
+                                                    key={key}
+                                                    className="bg-neutral-200 dark:bg-neutral-700 text-neutral-800 dark:text-white text-xs px-2 py-1 rounded-full"
+                                                >
+                                                    {key}: {value}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+                                    {/* Description */}
+                                    {typeof thought.description === "string" ? (
+                                        <p className="text-xs md:text-sm text-left text-neutral-700 dark:text-neutral-300 whitespace-pre-wrap pl-4">
+                                            {thought.description}
+                                        </p>
+                                    ) : (
+                                        <SyntaxHighlighter
+                                            language="json"
+                                            style={a11yLight}
+                                            customStyle={{padding: "1em", borderRadius: "0.5em", maxHeight: "18.75em", overflow: "auto"}}
+                                            wrapLongLines
+                                        >
+                                            {JSON.stringify(thought.description, null, 2)}
+                                        </SyntaxHighlighter>
+                                    )}
+                                </li>
+                            )}
+                        )}
                     </ul>
                 </div>
             </div>

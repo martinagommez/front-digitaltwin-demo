@@ -1,4 +1,4 @@
-import AssistenteVirtual from "./components/AssistenteVirtual";
+import VirtualAssistent from "./components/VirtualAssistent";
 import { LanguageProvider } from './components/LanguageContext';
 import { useEffect, useState  } from "react";
 
@@ -22,7 +22,7 @@ function App() {
 	}, [configTitle]);
 	return (
 		<LanguageProvider>
-			<AssistenteVirtual />
+			<VirtualAssistent />
 		</LanguageProvider>
 	);
 }
