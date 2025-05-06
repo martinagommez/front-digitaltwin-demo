@@ -99,7 +99,7 @@ function AssistenteVirtual() {
 			console.log('Plugins', response);
 			console.log(setupApi);
 			setPluginRequest(response.data);
-			if (plugins?.NumberOfPlugins === 1) {
+			if (plugins?.NumberOfPlugins === 1) { // sets up without selecting plugin due to only being one
 				setActivedPlugin(plugins.PluginList[0]);
 				console.log(plugins.PluginList[0]); // new for seeing what the plugin contains
 				setInputEnable(true);
@@ -392,6 +392,7 @@ function AssistenteVirtual() {
 										setActivedPlugin(plugin);
 										setInputEnable(true);
 										setPluginType(plugin.PluginType);
+										setPluginKeys(plugin.PluginKeys);
 									}}
 									className="border border-[var(--client-color)] text-[var(--client-color)] dark:border-[var(--client-color-dark)] dark:text-[var(--client-color-dark)] 
 									rounded-lg p-4 text-sm md:text-lg text-center w-[calc(50%)] md:w-[calc(30%)] max-w-[300px] h-[70px] md:h-[100px] flex-shrink-0"
