@@ -1,33 +1,33 @@
 .markdown h1 {
-    font-size: 2.25rem; /* equivalent to text-4xl in tailwind */
+    font-size: 1.875rem; /* text-3xl */
     font-weight: bold;
     margin-top: 1rem;
     margin-bottom: 0.5rem;
 }
 
 .markdown h2 {
-    font-size: 1.875rem; /* equivalent to text-3xl in tailwind */
+    font-size: 1.5rem; /* text-2xl */
     font-weight: bold;
     margin-top: 1rem;
     margin-bottom: 0.5rem;
 }
 
 .markdown h3 {
-    font-size: 1.5rem; /* equivalent to text-2xl in tailwind */
+    font-size: 1.25rem; /* text-xl */
     font-weight: bold;
     margin-top: 1rem;
     margin-bottom: 0.5rem;
 }
 
 .markdown h4 {
-    font-size: 1.25rem; /* equivalent to text-xl in tailwind */
+    font-size: 1rem; /* text-base */
     font-weight: bold;
     margin-top: 0.5rem;
     margin-bottom: 0.5rem;
 }
 
 .markdown p {
-    font-size: 1rem; /* equivalent to text-base in tailwind */
+    font-size: 0.875rem; /* text-sm */
     margin-bottom: 0.75rem;
 }
 
@@ -75,9 +75,9 @@
 
 /* ⬇️ Mobile-specific overrides */
 @media (max-width: 768px) {
-    .markdown h1 { font-size: 1.875rem; } /* text-3xl */
-    .markdown h2 { font-size: 1.5rem; }   /* text-2xl */
-    .markdown h3 { font-size: 1.25rem; }  /* text-xl */
-    .markdown h4 { font-size: 1.125rem; } /* text-lg */
-    .markdown p  { font-size: 0.875rem; } /* text-sm */
+    .markdown h1 { font-size: 1.5rem; } /* text-2xl */
+    .markdown h2 { font-size: 1.25rem; }   /* text-xl */
+    .markdown h3 { font-size: 1.125rem; }  /* text-lg */
+    .markdown h4 { font-size: 0.875rem; } /* text-sm */
+    .markdown p  { font-size: 0.75rem; } /* text-xs */
 }

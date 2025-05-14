@@ -53,8 +53,8 @@ type FormField = {
 };
 
 type Template = {
-    title: string;
-    fields: (FormField | { title: string; fields: FormField[] })[]; // handle single fields and grouped fields
+    title?: string;
+    fields?: (FormField | { title: string; fields: FormField[] })[]; // handle single fields and grouped fields
 };
 
 function ChatComponent({ 
@@ -83,7 +83,7 @@ function ChatComponent({
     const [imagePreviews, setImagePreviews] = useState<string[]>([]);
     const [isConfigLoaded, setIsConfigLoaded] = useState<boolean>(false);
     const [answer, setAnswer] = useState<ChatAppResponse | null>(null);
-    const [templateForm, setTemplateForm] = useState<boolean>(false);
+    // const [templateForm, setTemplateForm] = useState<boolean>(false);
     const [formTemplate, setFormTemplate] = useState<Template | null>(null);
     const [formValues, setFormValues] = useState<Record<string, string>>({});
     const [formError, setFormError] = useState<boolean>(false);
@@ -127,47 +127,47 @@ function ChatComponent({
     const exampleTemplate: Template = {
         title: 'User Feedback Form',
         fields: [
-        {
-            title: 'Orchestration',
-            fields: [
-                {
-                    label: 'Orchestration Name',
-                    type: 'text',
-                    name: 'OrchestrationName',
-                    placeholder: "Your orchestration's name",
-                },
-                {
-                    label: 'Orchestration Description',
-                    type: 'textarea',
-                    name: 'OrchestrationDescription',
-                    placeholder: "Your orchestration's description",
-                },
-                {
-                    label: 'Orchestration Type',
-                    type: 'textarea',
-                    name: 'OrchestrationType',
-                    placeholder: "Your orchestration's type",
-                },
-            ],
-        },
-        {
-            label: 'Agent Name',
-            type: 'text',
-            name: 'AgentName',
-            placeholder: "Your agent's name",
-        },
-        {
-            label: 'Intent',
-            type: 'text',
-            name: 'Intent',
-            placeholder: "Your agent's functionality",
-        },
-        {
-            label: 'System Prompt',
-            type: 'textarea',
-            name: 'SystemPrompt',
-            placeholder: "Your agent's behavior prompt",
-        },
+            // {
+            //     title: 'Orchestration',
+            //     fields: [
+            //         {
+            //             label: 'Orchestration Name',
+            //             type: 'text',
+            //             name: 'OrchestrationName',
+            //             placeholder: "Your orchestration's name",
+            //         },
+            //         {
+            //             label: 'Orchestration Description',
+            //             type: 'textarea',
+            //             name: 'OrchestrationDescription',
+            //             placeholder: "Your orchestration's description",
+            //         },
+            //         {
+            //             label: 'Orchestration Type',
+            //             type: 'textarea',
+            //             name: 'OrchestrationType',
+            //             placeholder: "Your orchestration's type",
+            //         },
+            //     ],
+            // },
+            // {
+            //     label: 'Agent Name',
+            //     type: 'text',
+            //     name: 'AgentName',
+            //     placeholder: "Your agent's name",
+            // },
+            // {
+            //     label: 'Intent',
+            //     type: 'text',
+            //     name: 'Intent',
+            //     placeholder: "Your agent's functionality",
+            // },
+            // {
+            //     label: 'System Prompt',
+            //     type: 'textarea',
+            //     name: 'SystemPrompt',
+            //     placeholder: "Your agent's behavior prompt",
+            // },
         ]
     }
 
@@ -219,16 +219,16 @@ function ChatComponent({
 
             // if (response.data.template) {
             //     setTemplateForm(true);
-            //     setFormTemplate(response.data.template);
-            //     console.log("Form Template set from backend:", response.data.template);
+            //     setFormTemplate(response.data.json);
+            //     console.log("Form Template set from backend:", response.data.json);
             // } else {
             //     setTemplateForm(false); // no template in this response
             // }
 
             if (true) { // temporary mock for testing
-                setTemplateForm(true);
+                // setTemplateForm(true);
                 setFormTemplate(exampleTemplate);
-                console.log("Mock Form Template set:", exampleTemplate);
+                setIsConfigLoaded(true);
             }            
 
             // const data: ChatAppResponse = await response.data;
@@ -305,10 +305,9 @@ function ChatComponent({
     };
 
     useEffect(() => {
-        // Mock setting template, in a real scenario, you would fetch it from the backend
-        setFormTemplate(exampleTemplate);
-        setTemplateForm(true); // Make sure the form displays when template is loaded
-    }, []);
+        console.log("Form Template set (effect):", formTemplate);
+        console.log("Is Config Loaded (effect):", isConfigLoaded);
+    }, [formTemplate, isConfigLoaded]);
 
     const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -317,7 +316,11 @@ function ChatComponent({
 
     const handleFormSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const allFields = formTemplate!.fields.flatMap(field =>
+        if (!formTemplate || !formTemplate.fields) {
+            console.error("Form template or its fields are undefined");
+            return;
+        }
+        const allFields = formTemplate.fields.flatMap(field =>
             'fields' in field ? field.fields : [field]
         );
         const missingFields = allFields.filter(f => !formValues[f.name]?.trim());
@@ -344,6 +347,7 @@ function ChatComponent({
         ]);
         // Reset the form
         setFormTemplate(null);
+        setIsConfigLoaded(false);
         setFormValues({});
         const formData = new FormData();
         // Add keys expected by fetchMessage
@@ -647,6 +651,7 @@ function ChatComponent({
 				console.error('Error fetching button states:', error);
 			} finally {
 				setIsConfigLoaded(true); // Mark as loaded
+                console.log("Is config loaded:", isConfigLoaded)
 			}
 		};
 		updateFeaturesStates();
@@ -657,13 +662,11 @@ function ChatComponent({
     useEffect(() => {
         const chatContainer = chatContainerRef.current;
         if (!chatContainer) return;
-
         const handleScroll = () => {
             const isAtBottom =
                 chatContainer.scrollHeight - chatContainer.scrollTop <= chatContainer.clientHeight + 10;
             setIsUserAtBottom(isAtBottom);
         };
-
         chatContainer.addEventListener("scroll", handleScroll);
         return () => chatContainer.removeEventListener("scroll", handleScroll);
     }, []);
@@ -715,7 +718,7 @@ function ChatComponent({
     return (
         <div className="flex flex-col md:flex-row w-full h-full"> {/* Main flex container */}
             {/* Main UI */}
-            <div className={`${isChatSidebarOpen ? "w-full h-1/2 md:w-1/2 md:h-full" : "w-full h-full"} flex flex-col bg-white dark:bg-neutral-800 rounded-lg`}>
+            <div className={`${isChatSidebarOpen ? "w-full h-1/2 md:w-2/3 md:h-full" : "w-full h-full"} flex flex-col bg-white dark:bg-neutral-800 rounded-lg`}>
                 {/* Scroll-bar do chat */}
                 <div 
                     ref={chatContainerRef}
@@ -773,10 +776,10 @@ function ChatComponent({
                                 <div
                                     className={`relative inline-block pr-4 pl-4 pb-2 rounded-3xl ${
                                         message.sender === "user"
-                                            ? "bg-[var(--client-color)] dark:bg-[var(--client-color-dark)] text-white pt-4"
+                                            ? "bg-[var(--client-color)] dark:bg-[var(--client-color-dark)] text-white pt-4 text-xs md:text-sm"
                                             : message.sender === "debug"
-                                            ? "bg-yellow-200 dark:bg-yellow-800 text-black dark:text-white pt-10"
-                                            : "bg-neutral-200 text-black dark:bg-neutral-900 dark:text-white pt-10"
+                                            ? "bg-yellow-200 dark:bg-yellow-800 text-black dark:text-white pt-10 text-xs md:text-sm"
+                                            : "bg-neutral-200 text-black dark:bg-neutral-900 dark:text-white pt-10 text-xs md:text-sm"
                                     }`}
                                 >
                                     <div
@@ -924,7 +927,7 @@ function ChatComponent({
                         )}
 
                         {/* Input Area */}
-                        {!templateForm && isConfigLoaded && (
+                        {isConfigLoaded && (!formTemplate || formTemplate.fields?.length === 0) && (
                             <div className="relative w-full flex">
                                 {inputEnable ? (
                                 // When inputEnable is true
@@ -1115,7 +1118,7 @@ function ChatComponent({
                         )}
 
                         {/* Template Form Area */}
-                        {templateForm && formTemplate && (
+                        {formTemplate?.fields && formTemplate.fields.length > 0 && (
                             <div className="relative w-full flex">
                                 <div className="relative w-full h-auto text-sm md:text-base p-2 resize-none overflow-auto bg-neutral-100 dark:bg-neutral-700 dark:text-white">
                                     <div className="w-full max-h-80 text-sm md:text-base bg-transparent border-none focus:outline-none focus:border-none resize-none overflow-auto p-2
@@ -1131,7 +1134,7 @@ function ChatComponent({
                                                 dark:[&::-webkit-scrollbar-thumb]:hover:bg-[#2a2a2a]">
                                         <form className="space-y-4 p-4 bg-transparent">
                                             <h2 className="text-xl font-bold mb-4">{formTemplate.title}</h2>
-                                            {formTemplate.fields.map((field, index) =>
+                                            {formTemplate?.fields?.map((field, index) =>
                                                 'fields' in field ? (
                                                     <div key={index} className="space-y-4">
                                                         <h3 className="font-semibold text-lg">{field.title}</h3>

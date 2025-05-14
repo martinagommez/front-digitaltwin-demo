@@ -501,7 +501,7 @@ function VirtualAssistent() {
 						${isFilesSidebarOpen ? 'justify-start' : 'justify-center'}
 						`}>
 						<div className={`bg-white dark:bg-neutral-800 shadow-lg text-center flex flex-grow top-0 overflow-hidden 
-							${isFilesSidebarOpen ? 'w-full' : 'max-w-4xl'}
+							${isFilesSidebarOpen ? 'w-full' : 'max-w-5xl'}
 							`}>
 								<FilesProcessing 
 									activedPlugin={activedPlugin} setActivedPlugin={setActivedPlugin}
@@ -522,7 +522,7 @@ function VirtualAssistent() {
 						${isChatSidebarOpen ? 'justify-start' : 'justify-center'}
 						`}>
 						<div className={`bg-white dark:bg-neutral-800 shadow-lg text-center flex flex-grow top-0 overflow-hidden 
-							${isChatSidebarOpen ? 'w-full' : 'max-w-4xl'}
+							${isChatSidebarOpen ? 'w-full' : 'max-w-5xl'}
 							`}> 
 							<ChatComponent 
 								activedPlugin={activedPlugin} setActivedPlugin={setActivedPlugin}
