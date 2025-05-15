@@ -2,19 +2,15 @@ import { useState, useEffect, useRef } from 'react';
 import { useDebounce } from 'use-debounce';
 import * as sdk from "microsoft-cognitiveservices-speech-sdk";
 import { FaFileAlt, FaPause, FaPlay } from "react-icons/fa";
-import { FiImage, FiFile, FiX, FiSend, FiSlash, FiChevronDown, FiChevronUp, FiCheck, FiCopy, FiSidebar } from "react-icons/fi";
-// import { AiOutlineLike, AiOutlineDislike, AiFillLike, AiFillDislike } from "react-icons/ai";
+import { FiImage, FiFile, FiX, FiSend, FiSlash, FiChevronDown, FiChevronUp, FiCheck, FiCopy } from "react-icons/fi";
 import Modal from 'react-modal';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
-
 import { useLanguageContext } from './LanguageContext';
 import AudioProcessing from './AudioProcessing';
-import AnalysisComponent from './AnalysisComponent';
 import './styles.css';
-import { ChatAppResponse } from '../api/models';
 import { PluginMeta, PluginKeys } from '../models/requests/PluginApi';
 
 interface Message {
@@ -58,8 +54,6 @@ function ChatComponent({
 }: ChatComponentProps) {
     const [inputText, setInputText] = useState<string>('');
     const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
-    // const [messageFeedback, setMessageFeedback] = useState<{ [id: string]: "like" | "dislike" | null }>({});
-	const [setupApi, setSetupApi] = useState<string>('');
     const [messages, setMessages] = useState<Message[]>([]);
     const [playingMessageId, setPlayingMessageId] = useState<string | null>(null);
     const [isUserAtBottom, setIsUserAtBottom] = useState<boolean>(true);
@@ -73,10 +67,6 @@ function ChatComponent({
     const [uploadedImages, setUploadedImages] = useState<File[]>([]);
     const [imagePreviews, setImagePreviews] = useState<string[]>([]);
     const [isConfigLoaded, setIsConfigLoaded] = useState<boolean>(false);
-    const [answer, setAnswer] = useState<ChatAppResponse | null>(null);
-    // const [formTemplate, setFormTemplate] = useState<Template | null>(null);
-    // const [formValues, setFormValues] = useState<Record<string, string>>({});
-    // const [formError, setFormError] = useState<boolean>(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const imageInputRef = useRef<HTMLInputElement>(null);
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -87,38 +77,6 @@ function ChatComponent({
     const lastPlayedMessageRef = useRef<string | null>(null);
     const isPlayingRef = useRef<boolean>(false);
     
-    const exampleAnswer: ChatAppResponse = {
-        context: {
-            thoughts: [
-                { title: "Data Extractor", description: "Pulled latest quarterly data from investor presentation and financial report.", props: {deployment: "chat-4o-mini", model:"gpt-4o-mini"} },
-                { title: "Summary Agent", description: "Identified top 5 KPIs to highlight in the response based on financial impact and relevance.", props: {deployment: "chat-4o-mini", model:"gpt-4o-mini"} },
-                { title: "Risk Analyst", description: "Detected potential concerns in regulatory changes and debt levels; suggested flagging them subtly." },
-                { title: "Clarity Optimizer", description: "Rephrased financial jargon to make it accessible to non-expert users while preserving accuracy." },
-                { title: "Narrative Builder", description: "Assembled a coherent summary starting with financial highlights, followed by ESG and innovation efforts." },
-                { title: "Validation Agent", description: "Cross-checked figures against the original PDF to ensure consistency." },
-                { title: "Tone Manager", description: "Ensured the message maintains a professional and neutral tone appropriate for executive reporting." },
-                { title: "Final Compiler", description: "Compiled the final message for delivery, ready for rendering in chat interface." }
-            ],
-            support: [
-                "https://www.edp.com/sites/default/files/2024-05/EDP%20-%201Q24%20Results%20Presentation.pdf",
-                "Content 1: The company finalized the acquisition of a 400MW solar portfolio in the U.S. Electricity distributed increased by 2.3%, mostly due to higher demand in Brazil.Digitalization initiatives reduced OPEX by 5% compared to the previous quarter. Stakeholder engagement efforts increased, with over 20 ESG-focused investor meetings in Q1. The number of customers with green energy contracts grew by 12% quarter over quarter.Regulatory changes in Iberia could impact hydroelectric margins in Q2.",
-                "Content 2: Electricity distributed increased by 2.3%, mostly due to higher demand in Brazil.",
-                "Content 3: Digitalization initiatives reduced OPEX by 5% compared to the previous quarter.",
-                "Content 4: Stakeholder engagement efforts increased, with over 20 ESG-focused investor meetings in Q1. The number of customers with green energy contracts grew by 12% quarter over quarter.",
-                "Content 5: The number of customers with green energy contracts grew by 12% quarter over quarter. Regulatory changes in Iberia could impact hydroelectric margins in Q2. Hybrid bond issuance in March secured €750 million at favorable terms. The first offshore wind turbine was successfully installed at the Moray West project. Employee satisfaction scores rose by 7% following remote work policy updates. The solar self-consumption segment grew by 19%, especially in southern markets."
-            ],
-            citations: [
-                "https://www.edp.com/sites/default/files/2024-05/Relat%C3%B3rio%20Intercalar%201%C2%BATrimestre%202024.pdf", 
-                "https://www.edp.com/sites/default/files/2024-05/EDP%20-%201Q24%20Results%20Presentation.pdf"
-            ]
-        }
-    };
-
-    useEffect(() => {
-        console.log("Setting answer:", exampleAnswer);
-        setAnswer(exampleAnswer);
-    }, []); // Runs only once when component mounts setAnswer(exampleAnswer);
-
     // Get data from context
     const { speechKey, speechRegion, voices, languageData } = useLanguageContext();
 
@@ -160,18 +118,6 @@ function ChatComponent({
             setSessionId(response.data.session_id);
             setToken(response.data.token);
 
-            // if (response.data.template) {
-            //     setTemplateForm(true);
-            //     setFormTemplate(response.data.json);
-            //     console.log("Form Template set from backend:", response.data.json);
-            // } else {
-            //     setTemplateForm(false); // no template in this response
-            // }
-
-            // const data: ChatAppResponse = await response.data;
-            // setAnswer(data);
-            // console.log("Setting answer:", data);
-
             let currentMessage = '';
             let index = 0;
             const typingEffect = () => {
@@ -184,7 +130,7 @@ function ChatComponent({
                         { 
                             text: currentMessage, 
                             language: selectedLanguage, 
-                            id: new Date().getTime().toString(), 
+                            id: messageId, 
                             files: [], 
                             images: [], 
                             sender: 'bot',
@@ -202,12 +148,13 @@ function ChatComponent({
                     }
                 }
             };
+            const messageId = new Date().getTime().toString();
             setMessages(prevMessages => [
                 ...prevMessages,
                 { 
                     text: '', 
                     language: selectedLanguage, 
-                    id: new Date().getTime().toString(), 
+                    id: messageId, 
                     files: [], 
                     images: [], 
                     sender: 'bot',
@@ -215,6 +162,7 @@ function ChatComponent({
                     orch_config_key: pluginKeys!.orch_config_key
                 },
             ]);
+            console.log("messageId from fetch message", messageId);
             setInputEnable(false);
             typingEffect();
             if (response.data.authentication === "AUTHENTICATION_FAILED") {
@@ -241,75 +189,14 @@ function ChatComponent({
         }
     };
 
-    // useEffect(() => {
-    //     console.log("Form Template set (effect):", formTemplate);
-    //     console.log("Is Config Loaded (effect):", isConfigLoaded);
-    // }, [formTemplate, isConfigLoaded]);
-
-    // const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    //     const { name, value } = e.target;
-    //     setFormValues(prev => ({ ...prev, [name]: value }));
-    // };
-
-    // const handleFormSubmit = async (e: React.FormEvent) => {
-    //     e.preventDefault();
-    //     if (!formTemplate || !formTemplate.fields) {
-    //         console.error("Form template or its fields are undefined");
-    //         return;
-    //     }
-    //     const allFields = formTemplate.fields.flatMap(field =>
-    //         'fields' in field ? field.fields : [field]
-    //     );
-    //     const missingFields = allFields.filter(f => !formValues[f.name]?.trim());
-    //     if (missingFields.length > 0) {
-    //         setFormError(true);
-    //         return;
-    //     }
-    //     setFormError(false);
-    //     console.log("Submitted form data:", formValues);
-    //     // Push it into the messages state as a user message
-    //     setMessages(prevMessages => [
-    //         ...prevMessages,
-    //         {
-    //             text: "",
-    //             sender: 'user',
-    //             id: new Date().getTime().toString(),
-    //             language: selectedLanguage,
-    //             files: [],
-    //             images: [],
-    //             orch_config_id: pluginKeys!.orch_config_id,
-    //             orch_config_key: pluginKeys!.orch_config_key,
-    //             formFields: formValues
-    //         }
-    //     ]);
-    //     // Reset the form
-    //     setFormTemplate(null);
-    //     setIsConfigLoaded(false);
-    //     setFormValues({});
-    //     const formData = new FormData();
-    //     // Add keys expected by fetchMessage
-    //     formData.append("user_input", inputText || "");
-    //     formData.append("timestamp", getFormattedTimestamp());
-    //     formData.append("session_id", sessionId);
-    //     formData.append("token", token);
-    //     formData.append("language", selectedLanguage);
-    //     formData.append("body", "")
-    //     formData.append("orch_config_id", pluginKeys!.orch_config_id);
-    //     formData.append("orch_config_key", pluginKeys!.orch_config_key);
-    //     // 👉 Convert formValues to FormData and call fetchMessage
-    //     for (const key in formValues) {
-    //         formData.append(key, formValues[key]);
-    //     }
-    //     await fetchMessage(formData);
-    //     console.log("Handle Form Send", formData);
-    // };
-
     // Envio da mensagem
     const handleSend = async () => {
         if (!inputText.trim()) return;
+        const messageId = new Date().getTime().toString();
         const formData = new FormData();
         formData.append("user_input", inputText || "");
         formData.append("timestamp", getFormattedTimestamp());
+        formData.append("messageId", messageId);
         formData.append("session_id", sessionId);
         formData.append("token", token);
         formData.append("language", selectedLanguage);
@@ -330,7 +217,7 @@ function ChatComponent({
             { 
                 text: inputText, 
                 language: selectedLanguage, 
-                id: '', 
+                id: messageId, 
                 files: uploadedFiles, 
                 images: imagePreviews,
                 sender: "user",
@@ -356,41 +243,6 @@ function ChatComponent({
         } catch (error) {
             console.error("Failed to copy:", error);
         }
-    };
-
-    // const sendFeedbackToBackend = async (messageId: string, feedback: "like" | "dislike" | null) => {
-    //     try {
-    //         await fetch(setupApi, {
-    //             method: "POST",
-    //             headers: { "Content-Type": "application/json" },
-    //             body: JSON.stringify({ messageId, feedback }),
-    //         });
-    //     } catch (error) {
-    //         console.error("Error sending feedback:", error);
-    //     }
-    // };
-
-    // const handleFeedback = (messageId: string, type: "like" | "dislike") => {
-    //     setMessageFeedback(prev => {
-    //         const current = prev[messageId];
-    //         let updatedType: "like" | "dislike" | null;
-    //         if (current === type) {
-    //             updatedType = null; // Deselect if already selected
-    //         } else {
-    //             updatedType = type; // Set the new type
-    //         }
-    //         // Send to backend
-    //         sendFeedbackToBackend(messageId, updatedType);
-    //         return { ...prev, [messageId]: updatedType };
-    //     });
-    // };
-
-    const handleAnalysis = async () => {
-        setIsChatSidebarOpen(true);
-    };
-
-    const closeSidebar = () => {
-        setIsChatSidebarOpen(false);
     };
 
     const [debouncedMessages] = useDebounce(messages, 500);
@@ -577,7 +429,6 @@ function ChatComponent({
     const uploadImagesButton = languageData?.uploadImagesButton?.[selectedLanguage] || languageData?.uploadImagesButton?.['en-US'];
     const audioPlayButton = languageData?.audioPlayButton?.[selectedLanguage] || languageData?.audioPlayButton?.['en-US'];
     const audioPauseButton = languageData?.audioPauseButton?.[selectedLanguage] || languageData?.audioPauseButton?.['en-US'];
-    const analysisTitle = languageData?.analysisTitle?.[selectedLanguage] || languageData?.analysisTitle?.['en-US'];
 
     //  Valores defualt para as features configuráveis pelo json
 	const [featuresStates, setFeaturesStates] = useState({
@@ -607,7 +458,6 @@ function ChatComponent({
                         displayAgents: data.enableFeatures.displayAgents ?? true,
 					});
 				}
-                setSetupApi(data.setupApi || '');
                 console.log('Language Data:', data);
 			} catch (error) {
 				console.error('Error fetching button states:', error);
@@ -751,7 +601,7 @@ function ChatComponent({
                                     >
                                         {/* Copy Button */}
                                         <button
-                                            onClick={() => copyToClipboard(message.text, message.id)}
+                                            onClick={() => {console.log("📎 Copy - message.id onClick:", message.id); copyToClipboard(message.text, message.id)}}
                                             className="w-6 h-6 text-black dark:text-white hover:text-neutral-700 dark:hover:text-neutral-300"
                                         >
                                             {copiedMessageId === message.id ? (
@@ -759,13 +609,6 @@ function ChatComponent({
                                             ) : (
                                                 <FiCopy className="w-4 h-4" />
                                             )}
-                                        </button>
-                                        {/* Analysis Sidebar Button */}
-                                        <button
-                                            onClick={() => handleAnalysis()}
-                                            className="w-6 h-6 text-black dark:text-white hover:text-neutral-700 dark:hover:text-neutral-300"
-                                        >
-                                            <FiSidebar className="w-4 h-4" />
                                         </button>
                                     </div>
 
@@ -820,10 +663,9 @@ function ChatComponent({
                                     {/* Buttons for each message: Like, Dislike and Audio*/}
                                     {message.text && (
                                         <div key={message.id} className={`flex ${message.sender === 'user' ? 'hidden' : 'justify-start'}`}>
-
                                             <button
                                                 title={playingMessageId === message.id ? audioPauseButton : audioPlayButton}
-                                                onClick={() => {console.log("🎵 message.id in onClick:", message.id); playChatbotResponse(message.text, message.id);}}
+                                                onClick={() => {console.log("🎵 Play/Pause - message.id onClick:", message.id); playChatbotResponse(message.text, message.id);}}
                                                 className="flex items-center justify-center rounded-full w-5 h-5 mb-2 
                                                     bg-black dark:bg-white text-neutral-200 dark:text-neutral-900 hover:bg-neutral-700 dark:hover:bg-neutral-300"
                                             >
@@ -1080,8 +922,6 @@ function ChatComponent({
                             </div>
                         )}
 
-
-
                     </div>
                 </div>
 
@@ -1126,27 +966,6 @@ function ChatComponent({
 
             </div>
 
-            {/* Sidebar */}
-            {isChatSidebarOpen && (
-                <div className="md:w-1/2 md:h-full w-full h-1/2 bg-white dark:bg-neutral-800 border-t md:border-l shadow-lg p-4 flex flex-col">
-                    <div className="flex flex-row justify-between items-center w-full">
-                        <h2 className="flex flex-row items-center md:text-lg text-base font-bold text-neutral-800 dark:text-white p-0">
-                            <FiSidebar className="mr-2" /> {analysisTitle}
-                        </h2>
-                        <button onClick={closeSidebar} className="self-end text-neutral-600 dark:text-neutral-300 text-2xl">
-                            <FiX />
-                        </button>
-                    </div>
-                    {answer && (
-                        <div className="mt-4 flex-1 w-full overflow-auto">
-                            <AnalysisComponent 
-                                answer={answer} 
-                                selectedLanguage={selectedLanguage}
-                            />
-                        </div>
-                    )}
-                </div>
-            )}
         </div>
     );
 }
