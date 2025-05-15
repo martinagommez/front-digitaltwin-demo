@@ -31,6 +31,14 @@
         "de-DE": "Sie haben das Zeitlimit der Sitzung erreicht. Bitte aktualisieren Sie die Seite.",
         "it-IT": "Hai raggiunto il limite di tempo della sessione. Aggiorna la pagina."
     },
+    "loadingForm": {
+        "pt-PT": "A carregar formulário",
+        "en-US": "Loading Form",
+        "es-ES": "Cargando formulario",
+        "fr-FR": "Chargement du formulaire",
+        "de-DE": "Formular wird geladen",
+        "it-IT": "Caricamento del modulo"
+    },
     "submitForm": {
         "pt-PT": "Enviar",
         "en-US": "Submit",

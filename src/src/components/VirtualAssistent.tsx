@@ -479,6 +479,7 @@ function VirtualAssistent() {
 										setActivedPlugin(plugin);
 										setInputEnable(true);
 										setPluginType(plugin.PluginType);
+										setPluginKeys(plugin.PluginKeys);
 									}}
 									className="border border-[var(--client-color)] text-[var(--client-color)] 
 										dark:border-[var(--client-color-dark)] dark:text-[var(--client-color-dark)] 

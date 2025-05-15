@@ -27,7 +27,8 @@ interface Message {
     agent?: string;
     orch_config_id: string|undefined;
     orch_config_key: string|undefined;
-    formFields?: Record<string, string>; 
+    formFields?: Record<string, string>;
+    formFieldLabels?: Record<string, string>; 
 };
 
 interface ChatComponentProps {
@@ -126,52 +127,52 @@ function ChatComponent({
         }
     };
 
-    const exampleTemplate: Template = {
-        title: 'User Feedback Form',
-        fields: [
-            {
-                title: 'Orchestration',
-                fields: [
-                    {
-                        label: 'Orchestration Name',
-                        type: 'text',
-                        name: 'OrchestrationName',
-                        placeholder: "Your orchestration's name",
-                    },
-                    {
-                        label: 'Orchestration Description',
-                        type: 'textarea',
-                        name: 'OrchestrationDescription',
-                        placeholder: "Your orchestration's description",
-                    },
-                    {
-                        label: 'Orchestration Type',
-                        type: 'textarea',
-                        name: 'OrchestrationType',
-                        placeholder: "Your orchestration's type",
-                    },
-                ],
-            },
-            {
-                label: 'Agent Name',
-                type: 'text',
-                name: 'AgentName',
-                placeholder: "Your agent's name",
-            },
-            {
-                label: 'Intent',
-                type: 'text',
-                name: 'Intent',
-                placeholder: "Your agent's functionality",
-            },
-            {
-                label: 'System Prompt',
-                type: 'textarea',
-                name: 'SystemPrompt',
-                placeholder: "Your agent's behavior prompt",
-            },
-        ]
-    }
+    // const exampleTemplate: Template = {
+    //     title: 'User Feedback Form',
+    //     fields: [
+    //         {
+    //             title: 'Orchestration',
+    //             fields: [
+    //                 {
+    //                     label: 'Orchestration Name',
+    //                     type: 'text',
+    //                     name: 'OrchestrationName',
+    //                     placeholder: "Your orchestration's name",
+    //                 },
+    //                 {
+    //                     label: 'Orchestration Description',
+    //                     type: 'textarea',
+    //                     name: 'OrchestrationDescription',
+    //                     placeholder: "Your orchestration's description",
+    //                 },
+    //                 {
+    //                     label: 'Orchestration Type',
+    //                     type: 'textarea',
+    //                     name: 'OrchestrationType',
+    //                     placeholder: "Your orchestration's type",
+    //                 },
+    //             ],
+    //         },
+    //         {
+    //             label: 'Agent Name',
+    //             type: 'text',
+    //             name: 'AgentName',
+    //             placeholder: "Your agent's name",
+    //         },
+    //         {
+    //             label: 'Intent',
+    //             type: 'text',
+    //             name: 'Intent',
+    //             placeholder: "Your agent's functionality",
+    //         },
+    //         {
+    //             label: 'System Prompt',
+    //             type: 'textarea',
+    //             name: 'SystemPrompt',
+    //             placeholder: "Your agent's behavior prompt",
+    //         },
+    //     ]
+    // }
 
     useEffect(() => {
         console.log("Setting answer:", exampleAnswer);
@@ -219,17 +220,9 @@ function ChatComponent({
             setSessionId(response.data.session_id);
             setToken(response.data.token);
 
-            // if (response.data.template) {
-            //     setFormTemplate(response.data.template_fields);
-            //     setIsConfigLoaded(true);
-            //     console.log("Form Template set from backend:", response.data.json);
-            // }
-
-            if (true) { // temporary mock for testing
-                // setTemplateForm(true);
-                setFormTemplate(exampleTemplate);
-                setIsConfigLoaded(true);
-            }            
+            setFormTemplate(response.data.template_fields);
+            setIsConfigLoaded(true);
+            console.log("Form Template set from backend:", response.data.template_fields);
 
             // const data: ChatAppResponse = await response.data;
             // setAnswer(data);
@@ -256,7 +249,7 @@ function ChatComponent({
                         },
                     ]);
                     index++;
-                    setTimeout(typingEffect, 5);
+                    setTimeout(typingEffect, 0);
                 } else {
                     setInputEnable(true);
                     if (response.data.end_chat === "END_CHAT") {
@@ -325,6 +318,10 @@ function ChatComponent({
         const allFields = formTemplate.fields.flatMap(field =>
             'fields' in field ? field.fields : [field]
         );
+        // Build name-to-label mapping
+        const fieldLabels = Object.fromEntries(
+            allFields.map(f => [f.name, f.label || f.name])
+        );
         const missingFields = allFields.filter(f => !formValues[f.name]?.trim());
         if (missingFields.length > 0) {
             setFormError(true);
@@ -344,7 +341,8 @@ function ChatComponent({
                 images: [],
                 orch_config_id: pluginKeys!.orch_config_id,
                 orch_config_key: pluginKeys!.orch_config_key,
-                formFields: formValues
+                formFields: formValues,
+                formFieldLabels: fieldLabels
             }
         ]);
         // Reset the form
@@ -361,10 +359,11 @@ function ChatComponent({
         formData.append("body", "")
         formData.append("orch_config_id", pluginKeys!.orch_config_id);
         formData.append("orch_config_key", pluginKeys!.orch_config_key);
-        // 👉 Convert formValues to FormData and call fetchMessage
-        for (const key in formValues) {
-            formData.append(key, formValues[key]);
-        }
+        // Create structured array of { name, answer } and send as one field
+        const formattedTemplateFields = Object.entries(formValues).map(([name, answer]) => ({
+            [name]:answer
+        }));
+        formData.append("template_fields", JSON.stringify(formattedTemplateFields));
         await fetchMessage(formData);
         console.log("Handle Form Send", formData);
     };
@@ -644,7 +643,8 @@ function ChatComponent({
     const uploadImagesButton = languageData?.uploadImagesButton?.[selectedLanguage] || languageData?.uploadImagesButton?.['en-US'];
     const audioPlayButton = languageData?.audioPlayButton?.[selectedLanguage] || languageData?.audioPlayButton?.['en-US'];
     const audioPauseButton = languageData?.audioPauseButton?.[selectedLanguage] || languageData?.audioPauseButton?.['en-US'];
-    const analysisTitle = languageData?.analysisTitle?.[selectedLanguage] || languageData?.analysisTitle?.['en-US'];
+    const analysisTitle = languageData?.analysisTitle?.[selectedLanguage] || languageData?.analysisTitle?.['en-US'];    
+    const loadingForm = languageData?.loadingForm?.[selectedLanguage] || languageData?.loadingForm?.['en-US'];
     const submitForm = languageData?.submitForm?.[selectedLanguage] || languageData?.submitForm?.['en-US'];
     const submitFormError = languageData?.submitFormError?.[selectedLanguage] || languageData?.submitFormError?.['en-US'];
 
@@ -813,48 +813,52 @@ function ChatComponent({
                                             : "bg-neutral-200 text-black dark:bg-neutral-900 dark:text-white pt-10 text-xs md:text-sm"
                                     }`}
                                 >
-                                    <div
-                                        className={`absolute flex flex-row items-center justify-between p-1 top-3 right-3
-                                            ${message.sender === 'user' ? 'hidden' : 'justify-end'}
-                                            `}
-                                    >
-                                        {/* Copy Button */}
-                                        <button
-                                            onClick={() => {console.log("📎 Copy - message.id onClick:", message.id); copyToClipboard(message.text, message.id)}}
-                                            className="w-6 h-6 text-black dark:text-white hover:text-neutral-700 dark:hover:text-neutral-300"
+                                    {!(index === messages.length - 1 && !inputEnable) && (
+                                        <div
+                                            className={`absolute flex flex-row items-center justify-between p-1 top-3 right-3
+                                                ${message.sender === 'user' ? 'hidden' : 'justify-end'}
+                                                `}
                                         >
-                                            {copiedMessageId === message.id ? (
-                                                <FiCheck className="w-4 h-4" />
-                                            ) : (
-                                                <FiCopy className="w-4 h-4" />
-                                            )}
-                                        </button>
-                                        {/* Analysis Sidebar Button */}
-                                        <button
-                                            onClick={() => handleAnalysis()}
-                                            className="w-6 h-6 text-black dark:text-white hover:text-neutral-700 dark:hover:text-neutral-300"
-                                        >
-                                            <FiSidebar className="w-4 h-4" />
-                                        </button>
-                                    </div>
+                                            {/* Copy Button */}
+                                            <button
+                                                onClick={() => {console.log("📎 Copy - message.id onClick:", message.id); copyToClipboard(message.text, message.id)}}
+                                                className="w-6 h-6 text-black dark:text-white hover:text-neutral-700 dark:hover:text-neutral-300"
+                                            >
+                                                {copiedMessageId === message.id ? (
+                                                    <FiCheck className="w-4 h-4" />
+                                                ) : (
+                                                    <FiCopy className="w-4 h-4" />
+                                                )}
+                                            </button>
+                                            {/* Analysis Sidebar Button */}
+                                            <button
+                                                onClick={() => handleAnalysis()}
+                                                className="w-6 h-6 text-black dark:text-white hover:text-neutral-700 dark:hover:text-neutral-300"
+                                            >
+                                                <FiSidebar className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    )}
 
                                     {/* Message Text */}
                                     {message.formFields ? (
                                         <div className="text-left">
                                             {Object.entries(message.formFields).map(([key, value]) => (
                                                 <div key={key} className="mb-1">
-                                                    <span className="font-bold">{key}: </span>
-                                                    <span className="whitespace-pre-wrap">{value}</span>
+                                                    <span className="font-bold">
+                                                        {message.formFieldLabels?.[key] || key}:
+                                                    </span>
+                                                    <span className="whitespace-pre-wrap"> {value}</span>
                                                 </div>
                                             ))}
                                         </div>
-                                    ) : (
-                                        // Regular markdown-rendered message
-                                        <div className="markdown">
-                                            <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
-                                                {message.text}
-                                            </ReactMarkdown>
-                                        </div>
+                                        ) : (
+                                            // Regular markdown-rendered message
+                                            <div className="markdown">
+                                                <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
+                                                    {message.text}
+                                                </ReactMarkdown>
+                                            </div>
                                     )}
 
                                     {/* Display sent images in chat area */}
@@ -887,7 +891,7 @@ function ChatComponent({
                                     )}
 
                                     {/* Buttons for each message: Like, Dislike and Audio*/}
-                                    {message.text && (
+                                    {message.text && !(index === messages.length - 1 && !inputEnable) && (
                                         <div key={message.id} className={`flex ${message.sender === 'user' ? 'hidden' : 'justify-start'}`}>
                                             <button
                                                 onClick={() => handleFeedback(message.id, "like")}
@@ -935,9 +939,9 @@ function ChatComponent({
                         <div className="mb-4 text-left">
                             <div className="inline-block p-4 rounded-3xl bg-neutral-200 text-black dark:bg-neutral-700 dark:text-white">
                                 <div className="flex items-center">
-                                    <div className="animate-pulse h-4 w-4 bg-neutral-300 rounded-full mr-2"></div>
-                                    <div className="animate-pulse h-4 w-4 bg-neutral-300 rounded-full mr-2"></div>
-                                    <div className="animate-pulse h-4 w-4 bg-neutral-300 rounded-full"></div>
+                                    <div className="animate-pulse h-3 w-3 bg-neutral-300 rounded-full mr-2"></div>
+                                    <div className="animate-pulse h-3 w-3 bg-neutral-300 rounded-full mr-2"></div>
+                                    <div className="animate-pulse h-3 w-3 bg-neutral-300 rounded-full"></div>
                                 </div>
                             </div>
                         </div>
@@ -980,7 +984,7 @@ function ChatComponent({
                         )}
 
                         {/* Input Area */}
-                        {isConfigLoaded && (!formTemplate || formTemplate.fields?.length === 0) && (
+                        {isConfigLoaded && (!formTemplate?.fields || formTemplate.fields?.length === 0) && (
                             <div className="relative w-full flex">
                                 {inputEnable ? (
                                 // When inputEnable is true
@@ -1171,7 +1175,7 @@ function ChatComponent({
                         )}
 
                         {/* Template Form Area */}
-                        {formTemplate?.fields && formTemplate.fields.length > 0 && (
+                        {formTemplate?.fields && formTemplate.fields.length > 0 && inputEnable && (
                             <div className="relative w-full flex">
                                 <div className="relative w-full h-auto text-sm md:text-base p-2 resize-none overflow-auto bg-neutral-100 dark:bg-neutral-700 dark:text-white">
                                     <div className="w-full max-h-80 text-sm md:text-base bg-transparent border-none focus:outline-none focus:border-none resize-none overflow-auto p-2
@@ -1270,11 +1274,15 @@ function ChatComponent({
                                 </div>
                             </div>
                         )}
+                        {formTemplate?.fields && formTemplate.fields.length > 0 && !inputEnable && (
+                            <div className="flex flex-col items-center justify-center py-4">
+                                <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-gray-500 dark:border-gray-400 mr-2"></div>
+                                <span className="w-full p-4 text-center italic text-gray-500 dark:text-gray-400">{loadingForm}</span>
+                            </div>
+                        )}
 
                     </div>
                 </div>
-
-                
 
                 {/* Modal pop-up for Session Expired */}
                 <Modal
