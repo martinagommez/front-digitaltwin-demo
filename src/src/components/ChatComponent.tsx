@@ -3,7 +3,7 @@ import { useDebounce } from 'use-debounce';
 import * as sdk from "microsoft-cognitiveservices-speech-sdk";
 import { FaFileAlt, FaPause, FaPlay } from "react-icons/fa";
 import { FiImage, FiFile, FiX, FiSend, FiSlash, FiChevronDown, FiChevronUp, FiCheck, FiCopy, FiSidebar } from "react-icons/fi";
-import { AiOutlineLike, AiOutlineDislike, AiFillLike, AiFillDislike } from "react-icons/ai";
+// import { AiOutlineLike, AiOutlineDislike, AiFillLike, AiFillDislike } from "react-icons/ai";
 import Modal from 'react-modal';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
@@ -46,18 +46,6 @@ interface ChatComponentProps {
     autoAudioPlay: boolean;
 }
 
-type FormField = {
-    label: string;
-    type: string; // 'text', 'textarea', etc.
-    name: string;
-    placeholder?: string;
-};
-
-type Template = {
-    title?: string;
-    fields?: (FormField | { title: string; fields: FormField[] })[]; // handle single fields and grouped fields
-};
-
 function ChatComponent({ 
     inputEnable, setInputEnable, 
     debugMode, setDebugMode, 
@@ -70,7 +58,7 @@ function ChatComponent({
 }: ChatComponentProps) {
     const [inputText, setInputText] = useState<string>('');
     const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
-    const [messageFeedback, setMessageFeedback] = useState<{ [id: string]: "like" | "dislike" | null }>({});
+    // const [messageFeedback, setMessageFeedback] = useState<{ [id: string]: "like" | "dislike" | null }>({});
 	const [setupApi, setSetupApi] = useState<string>('');
     const [messages, setMessages] = useState<Message[]>([]);
     const [playingMessageId, setPlayingMessageId] = useState<string | null>(null);
@@ -86,9 +74,9 @@ function ChatComponent({
     const [imagePreviews, setImagePreviews] = useState<string[]>([]);
     const [isConfigLoaded, setIsConfigLoaded] = useState<boolean>(false);
     const [answer, setAnswer] = useState<ChatAppResponse | null>(null);
-    const [formTemplate, setFormTemplate] = useState<Template | null>(null);
-    const [formValues, setFormValues] = useState<Record<string, string>>({});
-    const [formError, setFormError] = useState<boolean>(false);
+    // const [formTemplate, setFormTemplate] = useState<Template | null>(null);
+    // const [formValues, setFormValues] = useState<Record<string, string>>({});
+    // const [formError, setFormError] = useState<boolean>(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const imageInputRef = useRef<HTMLInputElement>(null);
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -125,53 +113,6 @@ function ChatComponent({
             ]
         }
     };
-
-    const exampleTemplate: Template = {
-        title: 'User Feedback Form',
-        fields: [
-            // {
-            //     title: 'Orchestration',
-            //     fields: [
-            //         {
-            //             label: 'Orchestration Name',
-            //             type: 'text',
-            //             name: 'OrchestrationName',
-            //             placeholder: "Your orchestration's name",
-            //         },
-            //         {
-            //             label: 'Orchestration Description',
-            //             type: 'textarea',
-            //             name: 'OrchestrationDescription',
-            //             placeholder: "Your orchestration's description",
-            //         },
-            //         {
-            //             label: 'Orchestration Type',
-            //             type: 'textarea',
-            //             name: 'OrchestrationType',
-            //             placeholder: "Your orchestration's type",
-            //         },
-            //     ],
-            // },
-            // {
-            //     label: 'Agent Name',
-            //     type: 'text',
-            //     name: 'AgentName',
-            //     placeholder: "Your agent's name",
-            // },
-            // {
-            //     label: 'Intent',
-            //     type: 'text',
-            //     name: 'Intent',
-            //     placeholder: "Your agent's functionality",
-            // },
-            // {
-            //     label: 'System Prompt',
-            //     type: 'textarea',
-            //     name: 'SystemPrompt',
-            //     placeholder: "Your agent's behavior prompt",
-            // },
-        ]
-    }
 
     useEffect(() => {
         console.log("Setting answer:", exampleAnswer);
@@ -226,12 +167,6 @@ function ChatComponent({
             // } else {
             //     setTemplateForm(false); // no template in this response
             // }
-
-            if (true) { // temporary mock for testing
-                // setTemplateForm(true);
-                setFormTemplate(exampleTemplate);
-                setIsConfigLoaded(true);
-            }            
 
             // const data: ChatAppResponse = await response.data;
             // setAnswer(data);
@@ -306,68 +241,68 @@ function ChatComponent({
         }
     };
 
-    useEffect(() => {
-        console.log("Form Template set (effect):", formTemplate);
-        console.log("Is Config Loaded (effect):", isConfigLoaded);
-    }, [formTemplate, isConfigLoaded]);
+    // useEffect(() => {
+    //     console.log("Form Template set (effect):", formTemplate);
+    //     console.log("Is Config Loaded (effect):", isConfigLoaded);
+    // }, [formTemplate, isConfigLoaded]);
 
-    const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        const { name, value } = e.target;
-        setFormValues(prev => ({ ...prev, [name]: value }));
-    };
+    // const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    //     const { name, value } = e.target;
+    //     setFormValues(prev => ({ ...prev, [name]: value }));
+    // };
 
-    const handleFormSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!formTemplate || !formTemplate.fields) {
-            console.error("Form template or its fields are undefined");
-            return;
-        }
-        const allFields = formTemplate.fields.flatMap(field =>
-            'fields' in field ? field.fields : [field]
-        );
-        const missingFields = allFields.filter(f => !formValues[f.name]?.trim());
-        if (missingFields.length > 0) {
-            setFormError(true);
-            return;
-        }
-        setFormError(false);
-        console.log("Submitted form data:", formValues);
-        // Push it into the messages state as a user message
-        setMessages(prevMessages => [
-            ...prevMessages,
-            {
-                text: "",
-                sender: 'user',
-                id: new Date().getTime().toString(),
-                language: selectedLanguage,
-                files: [],
-                images: [],
-                orch_config_id: pluginKeys!.orch_config_id,
-                orch_config_key: pluginKeys!.orch_config_key,
-                formFields: formValues
-            }
-        ]);
-        // Reset the form
-        setFormTemplate(null);
-        setIsConfigLoaded(false);
-        setFormValues({});
-        const formData = new FormData();
-        // Add keys expected by fetchMessage
-        formData.append("user_input", inputText || "");
-        formData.append("timestamp", getFormattedTimestamp());
-        formData.append("session_id", sessionId);
-        formData.append("token", token);
-        formData.append("language", selectedLanguage);
-        formData.append("body", "")
-        formData.append("orch_config_id", pluginKeys!.orch_config_id);
-        formData.append("orch_config_key", pluginKeys!.orch_config_key);
-        // 👉 Convert formValues to FormData and call fetchMessage
-        for (const key in formValues) {
-            formData.append(key, formValues[key]);
-        }
-        await fetchMessage(formData);
-        console.log("Handle Form Send", formData);
-    };
+    // const handleFormSubmit = async (e: React.FormEvent) => {
+    //     e.preventDefault();
+    //     if (!formTemplate || !formTemplate.fields) {
+    //         console.error("Form template or its fields are undefined");
+    //         return;
+    //     }
+    //     const allFields = formTemplate.fields.flatMap(field =>
+    //         'fields' in field ? field.fields : [field]
+    //     );
+    //     const missingFields = allFields.filter(f => !formValues[f.name]?.trim());
+    //     if (missingFields.length > 0) {
+    //         setFormError(true);
+    //         return;
+    //     }
+    //     setFormError(false);
+    //     console.log("Submitted form data:", formValues);
+    //     // Push it into the messages state as a user message
+    //     setMessages(prevMessages => [
+    //         ...prevMessages,
+    //         {
+    //             text: "",
+    //             sender: 'user',
+    //             id: new Date().getTime().toString(),
+    //             language: selectedLanguage,
+    //             files: [],
+    //             images: [],
+    //             orch_config_id: pluginKeys!.orch_config_id,
+    //             orch_config_key: pluginKeys!.orch_config_key,
+    //             formFields: formValues
+    //         }
+    //     ]);
+    //     // Reset the form
+    //     setFormTemplate(null);
+    //     setIsConfigLoaded(false);
+    //     setFormValues({});
+    //     const formData = new FormData();
+    //     // Add keys expected by fetchMessage
+    //     formData.append("user_input", inputText || "");
+    //     formData.append("timestamp", getFormattedTimestamp());
+    //     formData.append("session_id", sessionId);
+    //     formData.append("token", token);
+    //     formData.append("language", selectedLanguage);
+    //     formData.append("body", "")
+    //     formData.append("orch_config_id", pluginKeys!.orch_config_id);
+    //     formData.append("orch_config_key", pluginKeys!.orch_config_key);
+    //     // 👉 Convert formValues to FormData and call fetchMessage
+    //     for (const key in formValues) {
+    //         formData.append(key, formValues[key]);
+    //     }
+    //     await fetchMessage(formData);
+    //     console.log("Handle Form Send", formData);
+    // };
 
     // Envio da mensagem
     const handleSend = async () => {
@@ -423,32 +358,32 @@ function ChatComponent({
         }
     };
 
-    const sendFeedbackToBackend = async (messageId: string, feedback: "like" | "dislike" | null) => {
-        try {
-            await fetch(setupApi, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ messageId, feedback }),
-            });
-        } catch (error) {
-            console.error("Error sending feedback:", error);
-        }
-    };
+    // const sendFeedbackToBackend = async (messageId: string, feedback: "like" | "dislike" | null) => {
+    //     try {
+    //         await fetch(setupApi, {
+    //             method: "POST",
+    //             headers: { "Content-Type": "application/json" },
+    //             body: JSON.stringify({ messageId, feedback }),
+    //         });
+    //     } catch (error) {
+    //         console.error("Error sending feedback:", error);
+    //     }
+    // };
 
-    const handleFeedback = (messageId: string, type: "like" | "dislike") => {
-        setMessageFeedback(prev => {
-            const current = prev[messageId];
-            let updatedType: "like" | "dislike" | null;
-            if (current === type) {
-                updatedType = null; // Deselect if already selected
-            } else {
-                updatedType = type; // Set the new type
-            }
-            // Send to backend
-            sendFeedbackToBackend(messageId, updatedType);
-            return { ...prev, [messageId]: updatedType };
-        });
-    };
+    // const handleFeedback = (messageId: string, type: "like" | "dislike") => {
+    //     setMessageFeedback(prev => {
+    //         const current = prev[messageId];
+    //         let updatedType: "like" | "dislike" | null;
+    //         if (current === type) {
+    //             updatedType = null; // Deselect if already selected
+    //         } else {
+    //             updatedType = type; // Set the new type
+    //         }
+    //         // Send to backend
+    //         sendFeedbackToBackend(messageId, updatedType);
+    //         return { ...prev, [messageId]: updatedType };
+    //     });
+    // };
 
     const handleAnalysis = async () => {
         setIsChatSidebarOpen(true);
@@ -643,8 +578,6 @@ function ChatComponent({
     const audioPlayButton = languageData?.audioPlayButton?.[selectedLanguage] || languageData?.audioPlayButton?.['en-US'];
     const audioPauseButton = languageData?.audioPauseButton?.[selectedLanguage] || languageData?.audioPauseButton?.['en-US'];
     const analysisTitle = languageData?.analysisTitle?.[selectedLanguage] || languageData?.analysisTitle?.['en-US'];
-    const submitForm = languageData?.submitForm?.[selectedLanguage] || languageData?.submitForm?.['en-US'];
-    const submitFormError = languageData?.submitFormError?.[selectedLanguage] || languageData?.submitFormError?.['en-US'];
 
     //  Valores defualt para as features configuráveis pelo json
 	const [featuresStates, setFeaturesStates] = useState({
@@ -887,28 +820,7 @@ function ChatComponent({
                                     {/* Buttons for each message: Like, Dislike and Audio*/}
                                     {message.text && (
                                         <div key={message.id} className={`flex ${message.sender === 'user' ? 'hidden' : 'justify-start'}`}>
-                                            <button
-                                                onClick={() => handleFeedback(message.id, "like")}
-                                                className="flex items-center justify-center w-5 h-5 mr-1
-                                                    text-black dark:text-white hover:text-neutral-700 dark:hover:text-neutral-300"
-                                            >
-                                                {messageFeedback[message.id] === "like" ? (
-                                                    <AiFillLike className="w-5 h-5" />
-                                                ) : (
-                                                    <AiOutlineLike className="w-5 h-5" />
-                                                )}
-                                            </button>
-                                            <button
-                                                onClick={() => handleFeedback(message.id, "dislike")}
-                                                className="flex items-center justify-center w-5 h-5 mr-2
-                                                    text-black dark:text-white hover:text-neutral-700 dark:hover:text-neutral-300"
-                                            >
-                                                {messageFeedback[message.id] === "dislike" ? (
-                                                    <AiFillDislike className="w-5 h-5" />
-                                                ) : (
-                                                    <AiOutlineDislike className="w-5 h-5" />
-                                                )}
-                                            </button>
+
                                             <button
                                                 title={playingMessageId === message.id ? audioPauseButton : audioPlayButton}
                                                 onClick={() => {console.log("🎵 message.id in onClick:", message.id); playChatbotResponse(message.text, message.id);}}
@@ -978,7 +890,7 @@ function ChatComponent({
                         )}
 
                         {/* Input Area */}
-                        {isConfigLoaded && (!formTemplate || formTemplate.fields?.length === 0) && (
+                        {isConfigLoaded && (
                             <div className="relative w-full flex">
                                 {inputEnable ? (
                                 // When inputEnable is true
@@ -1168,106 +1080,7 @@ function ChatComponent({
                             </div>
                         )}
 
-                        {/* Template Form Area */}
-                        {formTemplate?.fields && formTemplate.fields.length > 0 && (
-                            <div className="relative w-full flex">
-                                <div className="relative w-full h-auto text-sm md:text-base p-2 resize-none overflow-auto bg-neutral-100 dark:bg-neutral-700 dark:text-white">
-                                    <div className="w-full max-h-80 text-sm md:text-base bg-transparent border-none focus:outline-none focus:border-none resize-none overflow-auto p-2
-                                                scroll-smooth
-                                                [&::-webkit-scrollbar]:w-2
-                                                [&::-webkit-scrollbar-track]:rounded-full
-                                                [&::-webkit-scrollbar-track]:bg-[#d0d0d0]/20
-                                                dark:[&::-webkit-scrollbar-track]:bg-[#414141]/20
-                                                [&::-webkit-scrollbar-thumb]:rounded-full
-                                                [&::-webkit-scrollbar-thumb]:bg-[#d0d0d0]
-                                                dark:[&::-webkit-scrollbar-thumb]:bg-[#414141]
-                                                [&::-webkit-scrollbar-thumb]:hover:bg-[#acabab]
-                                                dark:[&::-webkit-scrollbar-thumb]:hover:bg-[#2a2a2a]">
-                                        <form className="space-y-4 p-4 bg-transparent">
-                                            <h2 className="text-xl font-bold mb-4">{formTemplate.title}</h2>
-                                            {formTemplate?.fields?.map((field, index) =>
-                                                'fields' in field ? (
-                                                    <div key={index} className="space-y-4">
-                                                        <h3 className="font-semibold text-lg">{field.title}</h3>
-                                                        <div className="flex space-x-4">
-                                                            {field.fields.map((subField, subIndex) => (
-                                                                <div key={subIndex} className="flex flex-col w-1/2">
-                                                                    <label htmlFor={subField.name} className="mb-1 font-medium">
-                                                                        {subField.label}
-                                                                    </label>
-                                                                    {subField.type === 'textarea' ? (
-                                                                        <textarea
-                                                                            required
-                                                                            id={subField.name}
-                                                                            name={subField.name}
-                                                                            placeholder={subField.placeholder}
-                                                                            className="p-2 bg-white dark:bg-neutral-800 text-black dark:text-white border rounded"
-                                                                            onChange={handleFormChange}
-                                                                            value={formValues[subField.name] || ""}
-                                                                        />
-                                                                    ) : (
-                                                                        <input
-                                                                            required
-                                                                            id={subField.name}
-                                                                            type={subField.type}
-                                                                            name={subField.name}
-                                                                            placeholder={subField.placeholder}
-                                                                            className="p-2 bg-white dark:bg-neutral-800 text-black dark:text-white border rounded"
-                                                                            onChange={handleFormChange}
-                                                                            value={formValues[subField.name] || ""}
-                                                                        />
-                                                                    )}
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                ) : (
-                                                    <div key={index} className="flex flex-col">
-                                                    <label htmlFor={field.name} className="mb-1 font-medium">
-                                                        {field.label}
-                                                    </label>
-                                                    {field.type === 'textarea' ? (
-                                                        <textarea
-                                                            required
-                                                            id={field.name}
-                                                            name={field.name}
-                                                            placeholder={field.placeholder}
-                                                            className="p-2 bg-white dark:bg-neutral-800 text-black dark:text-white border rounded"
-                                                            onChange={handleFormChange}
-                                                            value={formValues[field.name] || ""}
-                                                        />
-                                                    ) : (
-                                                        <input
-                                                            required
-                                                            id={field.name}
-                                                            type={field.type}
-                                                            name={field.name}
-                                                            placeholder={field.placeholder}
-                                                            className="p-2 bg-white dark:bg-neutral-800 text-black dark:text-white border rounded"
-                                                            onChange={handleFormChange}
-                                                            value={formValues[field.name] || ""}
-                                                        />
-                                                    )}
-                                                    </div>
-                                                )
-                                            )}
-                                            {formError && (
-                                                <p className="text-base text-red-700 dark:text-red-500 font-serif">
-                                                    ❌ {submitFormError}
-                                                </p>
-                                            )}
-                                            <button
-                                                type="submit"
-                                                onClick={handleFormSubmit}
-                                                className="px-4 py-2 bg-black dark:bg-white text-white dark:text-black rounded-full hover:bg-neutral-800 dark:hover:bg-neutral-100"
-                                            >
-                                                {submitForm}
-                                            </button>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
+
 
                     </div>
                 </div>
