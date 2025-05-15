@@ -3,6 +3,7 @@ import { useDebounce } from 'use-debounce';
 import * as sdk from "microsoft-cognitiveservices-speech-sdk";
 import { FaFileAlt, FaPause, FaPlay } from "react-icons/fa";
 import { FiImage, FiFile, FiX, FiSend, FiSlash, FiChevronDown, FiChevronUp, FiCheck, FiCopy, FiSidebar } from "react-icons/fi";
+import { AiOutlineLike, AiOutlineDislike, AiFillLike, AiFillDislike } from "react-icons/ai";
 import Modal from 'react-modal';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
@@ -69,6 +70,8 @@ function ChatComponent({
 }: ChatComponentProps) {
     const [inputText, setInputText] = useState<string>('');
     const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+    const [messageFeedback, setMessageFeedback] = useState<{ [id: string]: "like" | "dislike" | null }>({});
+	const [setupApi, setSetupApi] = useState<string>('');
     const [messages, setMessages] = useState<Message[]>([]);
     const [playingMessageId, setPlayingMessageId] = useState<string | null>(null);
     const [isUserAtBottom, setIsUserAtBottom] = useState<boolean>(true);
@@ -83,7 +86,6 @@ function ChatComponent({
     const [imagePreviews, setImagePreviews] = useState<string[]>([]);
     const [isConfigLoaded, setIsConfigLoaded] = useState<boolean>(false);
     const [answer, setAnswer] = useState<ChatAppResponse | null>(null);
-    // const [templateForm, setTemplateForm] = useState<boolean>(false);
     const [formTemplate, setFormTemplate] = useState<Template | null>(null);
     const [formValues, setFormValues] = useState<Record<string, string>>({});
     const [formError, setFormError] = useState<boolean>(false);
@@ -421,6 +423,33 @@ function ChatComponent({
         }
     };
 
+    const sendFeedbackToBackend = async (messageId: string, feedback: "like" | "dislike" | null) => {
+        try {
+            await fetch(setupApi, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ messageId, feedback }),
+            });
+        } catch (error) {
+            console.error("Error sending feedback:", error);
+        }
+    };
+
+    const handleFeedback = (messageId: string, type: "like" | "dislike") => {
+        setMessageFeedback(prev => {
+            const current = prev[messageId];
+            let updatedType: "like" | "dislike" | null;
+            if (current === type) {
+                updatedType = null; // Deselect if already selected
+            } else {
+                updatedType = type; // Set the new type
+            }
+            // Send to backend
+            sendFeedbackToBackend(messageId, updatedType);
+            return { ...prev, [messageId]: updatedType };
+        });
+    };
+
     const handleAnalysis = async () => {
         setIsChatSidebarOpen(true);
     };
@@ -645,7 +674,7 @@ function ChatComponent({
                         displayAgents: data.enableFeatures.displayAgents ?? true,
 					});
 				}
-                // setSetupApi(data.setupApi || '');
+                setSetupApi(data.setupApi || '');
                 console.log('Language Data:', data);
 			} catch (error) {
 				console.error('Error fetching button states:', error);
@@ -855,19 +884,41 @@ function ChatComponent({
                                         </div>
                                     )}
 
-                                    {/* Audio Button for each message */}
+                                    {/* Buttons for each message: Like, Dislike and Audio*/}
                                     {message.text && (
                                         <div key={message.id} className={`flex ${message.sender === 'user' ? 'hidden' : 'justify-start'}`}>
                                             <button
+                                                onClick={() => handleFeedback(message.id, "like")}
+                                                className="flex items-center justify-center w-5 h-5 mr-1
+                                                    text-black dark:text-white hover:text-neutral-700 dark:hover:text-neutral-300"
+                                            >
+                                                {messageFeedback[message.id] === "like" ? (
+                                                    <AiFillLike className="w-5 h-5" />
+                                                ) : (
+                                                    <AiOutlineLike className="w-5 h-5" />
+                                                )}
+                                            </button>
+                                            <button
+                                                onClick={() => handleFeedback(message.id, "dislike")}
+                                                className="flex items-center justify-center w-5 h-5 mr-2
+                                                    text-black dark:text-white hover:text-neutral-700 dark:hover:text-neutral-300"
+                                            >
+                                                {messageFeedback[message.id] === "dislike" ? (
+                                                    <AiFillDislike className="w-5 h-5" />
+                                                ) : (
+                                                    <AiOutlineDislike className="w-5 h-5" />
+                                                )}
+                                            </button>
+                                            <button
                                                 title={playingMessageId === message.id ? audioPauseButton : audioPlayButton}
                                                 onClick={() => {console.log("🎵 message.id in onClick:", message.id); playChatbotResponse(message.text, message.id);}}
-                                                className="flex items-center justify-center rounded-full w-5 h-5 md:w-6 md:h-6 mb-2 
-                                                    bg-black dark:bg-white text-white dark:text-black hover:bg-neutral-700 dark:hover:bg-neutral-300"
+                                                className="flex items-center justify-center rounded-full w-5 h-5 mb-2 
+                                                    bg-black dark:bg-white text-neutral-200 dark:text-neutral-900 hover:bg-neutral-700 dark:hover:bg-neutral-300"
                                             >
                                                 {playingMessageId === message.id ? (
-                                                    <FaPause className="w-[10px] h-[10px] md:w-3 md:h-3" />
+                                                    <FaPause className="w-[10px] h-[10px] ml-[1px]" />
                                                 ) : (
-                                                    <FaPlay className="w-[10px] h-[10px] md:w-3 md:h-3" />
+                                                    <FaPlay className="w-[10px] h-[10px] ml-[1px]" />
                                                 )}
                                             </button>
                                         </div>
