@@ -71,7 +71,7 @@ function ChatComponent({
     const [inputText, setInputText] = useState<string>('');
     const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
     const [messageFeedback, setMessageFeedback] = useState<{ [id: string]: "like" | "dislike" | null }>({});
-	const [setupApi, setSetupApi] = useState<string>('');
+	const [feedbackApi, setFeedbackApi] = useState<string>('');
     const [messages, setMessages] = useState<Message[]>([]);
     const [playingMessageId, setPlayingMessageId] = useState<string | null>(null);
     const [isUserAtBottom, setIsUserAtBottom] = useState<boolean>(true);
@@ -129,47 +129,47 @@ function ChatComponent({
     const exampleTemplate: Template = {
         title: 'User Feedback Form',
         fields: [
-            // {
-            //     title: 'Orchestration',
-            //     fields: [
-            //         {
-            //             label: 'Orchestration Name',
-            //             type: 'text',
-            //             name: 'OrchestrationName',
-            //             placeholder: "Your orchestration's name",
-            //         },
-            //         {
-            //             label: 'Orchestration Description',
-            //             type: 'textarea',
-            //             name: 'OrchestrationDescription',
-            //             placeholder: "Your orchestration's description",
-            //         },
-            //         {
-            //             label: 'Orchestration Type',
-            //             type: 'textarea',
-            //             name: 'OrchestrationType',
-            //             placeholder: "Your orchestration's type",
-            //         },
-            //     ],
-            // },
-            // {
-            //     label: 'Agent Name',
-            //     type: 'text',
-            //     name: 'AgentName',
-            //     placeholder: "Your agent's name",
-            // },
-            // {
-            //     label: 'Intent',
-            //     type: 'text',
-            //     name: 'Intent',
-            //     placeholder: "Your agent's functionality",
-            // },
-            // {
-            //     label: 'System Prompt',
-            //     type: 'textarea',
-            //     name: 'SystemPrompt',
-            //     placeholder: "Your agent's behavior prompt",
-            // },
+            {
+                title: 'Orchestration',
+                fields: [
+                    {
+                        label: 'Orchestration Name',
+                        type: 'text',
+                        name: 'OrchestrationName',
+                        placeholder: "Your orchestration's name",
+                    },
+                    {
+                        label: 'Orchestration Description',
+                        type: 'textarea',
+                        name: 'OrchestrationDescription',
+                        placeholder: "Your orchestration's description",
+                    },
+                    {
+                        label: 'Orchestration Type',
+                        type: 'textarea',
+                        name: 'OrchestrationType',
+                        placeholder: "Your orchestration's type",
+                    },
+                ],
+            },
+            {
+                label: 'Agent Name',
+                type: 'text',
+                name: 'AgentName',
+                placeholder: "Your agent's name",
+            },
+            {
+                label: 'Intent',
+                type: 'text',
+                name: 'Intent',
+                placeholder: "Your agent's functionality",
+            },
+            {
+                label: 'System Prompt',
+                type: 'textarea',
+                name: 'SystemPrompt',
+                placeholder: "Your agent's behavior prompt",
+            },
         ]
     }
 
@@ -220,11 +220,9 @@ function ChatComponent({
             setToken(response.data.token);
 
             // if (response.data.template) {
-            //     setTemplateForm(true);
-            //     setFormTemplate(response.data.json);
+            //     setFormTemplate(response.data.template_fields);
+            //     setIsConfigLoaded(true);
             //     console.log("Form Template set from backend:", response.data.json);
-            // } else {
-            //     setTemplateForm(false); // no template in this response
             // }
 
             if (true) { // temporary mock for testing
@@ -249,7 +247,7 @@ function ChatComponent({
                         { 
                             text: currentMessage, 
                             language: selectedLanguage, 
-                            id: new Date().getTime().toString(), 
+                            id: messageId, 
                             files: [], 
                             images: [], 
                             sender: 'bot',
@@ -267,12 +265,13 @@ function ChatComponent({
                     }
                 }
             };
+            const messageId = new Date().getTime().toString();
             setMessages(prevMessages => [
                 ...prevMessages,
                 { 
                     text: '', 
                     language: selectedLanguage, 
-                    id: new Date().getTime().toString(), 
+                    id: messageId, 
                     files: [], 
                     images: [], 
                     sender: 'bot',
@@ -280,6 +279,7 @@ function ChatComponent({
                     orch_config_key: pluginKeys!.orch_config_key
                 },
             ]);
+            console.log("messageId from fetch message", messageId);
             setInputEnable(false);
             typingEffect();
             if (response.data.authentication === "AUTHENTICATION_FAILED") {
@@ -372,9 +372,11 @@ function ChatComponent({
     // Envio da mensagem
     const handleSend = async () => {
         if (!inputText.trim()) return;
+        const messageId = new Date().getTime().toString();
         const formData = new FormData();
         formData.append("user_input", inputText || "");
         formData.append("timestamp", getFormattedTimestamp());
+        formData.append("messageId", messageId);
         formData.append("session_id", sessionId);
         formData.append("token", token);
         formData.append("language", selectedLanguage);
@@ -395,7 +397,7 @@ function ChatComponent({
             { 
                 text: inputText, 
                 language: selectedLanguage, 
-                id: '', 
+                id: messageId, 
                 files: uploadedFiles, 
                 images: imagePreviews,
                 sender: "user",
@@ -425,7 +427,7 @@ function ChatComponent({
 
     const sendFeedbackToBackend = async (messageId: string, feedback: "like" | "dislike" | null) => {
         try {
-            await fetch(setupApi, {
+            await fetch(feedbackApi, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ messageId, feedback }),
@@ -674,7 +676,7 @@ function ChatComponent({
                         displayAgents: data.enableFeatures.displayAgents ?? true,
 					});
 				}
-                setSetupApi(data.setupApi || '');
+                setFeedbackApi(data.feedbackApi || '');
                 console.log('Language Data:', data);
 			} catch (error) {
 				console.error('Error fetching button states:', error);
@@ -818,7 +820,7 @@ function ChatComponent({
                                     >
                                         {/* Copy Button */}
                                         <button
-                                            onClick={() => copyToClipboard(message.text, message.id)}
+                                            onClick={() => {console.log("📎 Copy - message.id onClick:", message.id); copyToClipboard(message.text, message.id)}}
                                             className="w-6 h-6 text-black dark:text-white hover:text-neutral-700 dark:hover:text-neutral-300"
                                         >
                                             {copiedMessageId === message.id ? (
@@ -911,7 +913,7 @@ function ChatComponent({
                                             </button>
                                             <button
                                                 title={playingMessageId === message.id ? audioPauseButton : audioPlayButton}
-                                                onClick={() => {console.log("🎵 message.id in onClick:", message.id); playChatbotResponse(message.text, message.id);}}
+                                                onClick={() => {console.log("🎵 Play/Pause - message.id onClick:", message.id); playChatbotResponse(message.text, message.id);}}
                                                 className="flex items-center justify-center rounded-full w-5 h-5 mb-2 
                                                     bg-black dark:bg-white text-neutral-200 dark:text-neutral-900 hover:bg-neutral-700 dark:hover:bg-neutral-300"
                                             >
@@ -1184,11 +1186,11 @@ function ChatComponent({
                                                 [&::-webkit-scrollbar-thumb]:hover:bg-[#acabab]
                                                 dark:[&::-webkit-scrollbar-thumb]:hover:bg-[#2a2a2a]">
                                         <form className="space-y-4 p-4 bg-transparent">
-                                            <h2 className="text-xl font-bold mb-4">{formTemplate.title}</h2>
+                                            <h2 className="text-lg font-bold mb-4">{formTemplate.title}</h2>
                                             {formTemplate?.fields?.map((field, index) =>
                                                 'fields' in field ? (
                                                     <div key={index} className="space-y-4">
-                                                        <h3 className="font-semibold text-lg">{field.title}</h3>
+                                                        <h3 className="font-semibold text-base">{field.title}</h3>
                                                         <div className="flex space-x-4">
                                                             {field.fields.map((subField, subIndex) => (
                                                                 <div key={subIndex} className="flex flex-col w-1/2">
@@ -1201,7 +1203,7 @@ function ChatComponent({
                                                                             id={subField.name}
                                                                             name={subField.name}
                                                                             placeholder={subField.placeholder}
-                                                                            className="p-2 bg-white dark:bg-neutral-800 text-black dark:text-white border rounded"
+                                                                            className="p-2 text-sm bg-white dark:bg-neutral-800 text-black dark:text-white border rounded"
                                                                             onChange={handleFormChange}
                                                                             value={formValues[subField.name] || ""}
                                                                         />
@@ -1212,7 +1214,7 @@ function ChatComponent({
                                                                             type={subField.type}
                                                                             name={subField.name}
                                                                             placeholder={subField.placeholder}
-                                                                            className="p-2 bg-white dark:bg-neutral-800 text-black dark:text-white border rounded"
+                                                                            className="p-2 text-sm bg-white dark:bg-neutral-800 text-black dark:text-white border rounded"
                                                                             onChange={handleFormChange}
                                                                             value={formValues[subField.name] || ""}
                                                                         />
@@ -1232,7 +1234,7 @@ function ChatComponent({
                                                             id={field.name}
                                                             name={field.name}
                                                             placeholder={field.placeholder}
-                                                            className="p-2 bg-white dark:bg-neutral-800 text-black dark:text-white border rounded"
+                                                            className="p-2 text-sm bg-white dark:bg-neutral-800 text-black dark:text-white border rounded"
                                                             onChange={handleFormChange}
                                                             value={formValues[field.name] || ""}
                                                         />
@@ -1243,7 +1245,7 @@ function ChatComponent({
                                                             type={field.type}
                                                             name={field.name}
                                                             placeholder={field.placeholder}
-                                                            className="p-2 bg-white dark:bg-neutral-800 text-black dark:text-white border rounded"
+                                                            className="p-2 text-sm bg-white dark:bg-neutral-800 text-black dark:text-white border rounded"
                                                             onChange={handleFormChange}
                                                             value={formValues[field.name] || ""}
                                                         />
@@ -1259,7 +1261,7 @@ function ChatComponent({
                                             <button
                                                 type="submit"
                                                 onClick={handleFormSubmit}
-                                                className="px-4 py-2 bg-black dark:bg-white text-white dark:text-black rounded-full hover:bg-neutral-800 dark:hover:bg-neutral-100"
+                                                className="px-4 py-2 text-sm bg-black dark:bg-white text-white dark:text-black rounded-full hover:bg-neutral-800 dark:hover:bg-neutral-100"
                                             >
                                                 {submitForm}
                                             </button>
