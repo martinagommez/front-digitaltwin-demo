@@ -27,8 +27,9 @@ interface Message {
     agent?: string;
     orch_config_id: string|undefined;
     orch_config_key: string|undefined;
-    formFields?: Record<string, string>;
+    formFields?: Record<string, string | string[]>;
     formFieldLabels?: Record<string, string>; 
+    formFieldOptions?: Record<string, { label: string; value: string }[]>;
 };
 
 interface ChatComponentProps {
@@ -52,6 +53,7 @@ type FormField = {
     type: string; // 'text', 'textarea', etc.
     name: string;
     placeholder?: string;
+    options?: { label: string; value: string }[]; 
 };
 
 type Template = {
@@ -88,7 +90,7 @@ function ChatComponent({
     const [isConfigLoaded, setIsConfigLoaded] = useState<boolean>(false);
     const [answer, setAnswer] = useState<ChatAppResponse | null>(null);
     const [formTemplate, setFormTemplate] = useState<Template | null>(null);
-    const [formValues, setFormValues] = useState<Record<string, string>>({});
+    const [formValues, setFormValues] = useState<Record<string, string | string[]>>({});
     const [formError, setFormError] = useState<boolean>(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const imageInputRef = useRef<HTMLInputElement>(null);
@@ -127,52 +129,104 @@ function ChatComponent({
         }
     };
 
-    // const exampleTemplate: Template = {
-    //     title: 'User Feedback Form',
-    //     fields: [
-    //         {
-    //             title: 'Orchestration',
-    //             fields: [
-    //                 {
-    //                     label: 'Orchestration Name',
-    //                     type: 'text',
-    //                     name: 'OrchestrationName',
-    //                     placeholder: "Your orchestration's name",
-    //                 },
-    //                 {
-    //                     label: 'Orchestration Description',
-    //                     type: 'textarea',
-    //                     name: 'OrchestrationDescription',
-    //                     placeholder: "Your orchestration's description",
-    //                 },
-    //                 {
-    //                     label: 'Orchestration Type',
-    //                     type: 'textarea',
-    //                     name: 'OrchestrationType',
-    //                     placeholder: "Your orchestration's type",
-    //                 },
-    //             ],
-    //         },
-    //         {
-    //             label: 'Agent Name',
-    //             type: 'text',
-    //             name: 'AgentName',
-    //             placeholder: "Your agent's name",
-    //         },
-    //         {
-    //             label: 'Intent',
-    //             type: 'text',
-    //             name: 'Intent',
-    //             placeholder: "Your agent's functionality",
-    //         },
-    //         {
-    //             label: 'System Prompt',
-    //             type: 'textarea',
-    //             name: 'SystemPrompt',
-    //             placeholder: "Your agent's behavior prompt",
-    //         },
-    //     ]
-    // }
+    const exampleTemplate: Template = {
+        title: "Intent Configuration Form",
+        fields: [
+          {
+            label: "Bot Name",
+            type: "text",
+            name: "botName",
+            placeholder: "Enter bot name"
+          },
+          {
+            label: "Bot Description",
+            type: "textarea",
+            name: "botDescription",
+            placeholder: "Describe the bot's purpose"
+          },
+          {
+            label: "Primary Intent",
+            type: "select",
+            name: "primaryIntent",
+            options: [
+              { label: "Greeting", value: "greeting" },
+              { label: "Goodbye", value: "goodbye" },
+              { label: "FAQ", value: "faq" }
+            ]
+          },
+          {
+            label: "Related Intents",
+            type: "multiselect",
+            name: "relatedIntents",
+            options: [
+              { label: "Order Status", value: "order_status" },
+              { label: "Cancel Order", value: "cancel_order" },
+              { label: "Shipping Info", value: "shipping_info" },
+              { label: "Returns", value: "returns" }
+            ]
+          },
+          // Nested group of subfields example:
+          {
+            title: "Response Settings",
+            fields: [
+              {
+                label: "Response Type",
+                type: "select",
+                name: "responseType",
+                options: [
+                  { label: "Text", value: "text" },
+                  { label: "Audio", value: "audio" },
+                  { label: "Video", value: "video" }
+                ]
+              },
+              {
+                label: "Response Text",
+                type: "textarea",
+                name: "responseText",
+                placeholder: "Enter the default response"
+              },
+              {
+                label: "Enable Fallback",
+                type: "select",
+                name: "enableFallback",
+                options: [
+                  { label: "Yes", value: "yes" },
+                  { label: "No", value: "no" }
+                ]
+              },
+              {
+                label: "Fallback Responses",
+                type: "multiselect",
+                name: "fallbackResponses",
+                options: [
+                  { label: "Sorry, can you repeat?", value: "repeat" },
+                  { label: "I didn't get that", value: "not_understood" },
+                  { label: "Please rephrase", value: "rephrase" }
+                ]
+              }
+            ]
+          },
+          // Another nested group for advanced options:
+          {
+            title: "Advanced Options",
+            fields: [
+              {
+                label: "Confidence Threshold",
+                type: "text",
+                name: "confidenceThreshold",
+                placeholder: "e.g. 0.7"
+              },
+              {
+                label: "Max Retry Attempts",
+                type: "text",
+                name: "maxRetries",
+                placeholder: "e.g. 3"
+              }
+            ]
+          }
+        ]
+      };
+      
 
     useEffect(() => {
         console.log("Setting answer:", exampleAnswer);
@@ -207,7 +261,6 @@ function ChatComponent({
             for (const pair of formData.entries()) {
                 console.log("   ➤", pair[0], pair[1]);
             }
-
             const response = await axios.post(url + "/message", formData, {
                 headers: {
                     "Content-Type": "multipart/form-data",
@@ -215,19 +268,16 @@ function ChatComponent({
                 }, timeout: 10000000
             });
             console.log("Response from backend", response);
-
             const apiResponse = response.data.response;
             setSessionId(response.data.session_id);
             setToken(response.data.token);
-
-            setFormTemplate(response.data.template_fields);
+            // setFormTemplate(response.data.template_fields);
+            setFormTemplate(exampleTemplate);
             setIsConfigLoaded(true);
             console.log("Form Template set from backend:", response.data.template_fields);
-
             // const data: ChatAppResponse = await response.data;
             // setAnswer(data);
             // console.log("Setting answer:", data);
-
             let currentMessage = '';
             let index = 0;
             const typingEffect = () => {
@@ -304,7 +354,7 @@ function ChatComponent({
         console.log("Is Config Loaded (effect):", isConfigLoaded);
     }, [formTemplate, isConfigLoaded]);
 
-    const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormValues(prev => ({ ...prev, [name]: value }));
     };
@@ -322,7 +372,17 @@ function ChatComponent({
         const fieldLabels = Object.fromEntries(
             allFields.map(f => [f.name, f.label || f.name])
         );
-        const missingFields = allFields.filter(f => !formValues[f.name]?.trim());
+        const fieldOptions = Object.fromEntries(
+            allFields.map(f => [f.name, f.options || []])
+        );
+        // Check for missing required fields
+        const missingFields = allFields.filter(f => {
+            const value = formValues[f.name];
+            if (Array.isArray(value)) {
+                return value.length === 0; // multiselect: no option selected
+            }
+            return !value?.trim(); // string: empty or whitespace only
+        });
         if (missingFields.length > 0) {
             setFormError(true);
             return;
@@ -342,7 +402,8 @@ function ChatComponent({
                 orch_config_id: pluginKeys!.orch_config_id,
                 orch_config_key: pluginKeys!.orch_config_key,
                 formFields: formValues,
-                formFieldLabels: fieldLabels
+                formFieldLabels: fieldLabels,
+                formFieldOptions: fieldOptions
             }
         ]);
         // Reset the form
@@ -843,14 +904,25 @@ function ChatComponent({
                                     {/* Message Text */}
                                     {message.formFields ? (
                                         <div className="text-left">
-                                            {Object.entries(message.formFields).map(([key, value]) => (
-                                                <div key={key} className="mb-1">
-                                                    <span className="font-bold">
-                                                        {message.formFieldLabels?.[key] || key}:
-                                                    </span>
-                                                    <span className="whitespace-pre-wrap"> {value}</span>
-                                                </div>
-                                            ))}
+                                            {Object.entries(message.formFields).map(([key, value]) => {
+                                                const label = message.formFieldLabels?.[key] || key;
+                                                const options = message.formFieldOptions?.[key] || [];
+                                                const renderValue = () => {
+                                                    if (Array.isArray(value)) {
+                                                        return value
+                                                            .map((val) => options.find((opt) => opt.value === val)?.label || val)
+                                                            .join(', ');
+                                                    } else {
+                                                        return options.find((opt) => opt.value === value)?.label || value;
+                                                    }
+                                                };
+                                                return (
+                                                    <div key={key} className="mb-1">
+                                                    <span className="font-bold">{label}:</span>
+                                                    <span className="whitespace-pre-wrap"> {renderValue()}</span>
+                                                    </div>
+                                                );
+                                                })}
                                         </div>
                                         ) : (
                                             // Regular markdown-rendered message
@@ -1189,86 +1261,187 @@ function ChatComponent({
                                                 dark:[&::-webkit-scrollbar-thumb]:bg-[#414141]
                                                 [&::-webkit-scrollbar-thumb]:hover:bg-[#acabab]
                                                 dark:[&::-webkit-scrollbar-thumb]:hover:bg-[#2a2a2a]">
-                                        <form className="space-y-4 p-4 bg-transparent">
+                                        <form className="space-y-4 p-4 bg-transparent max-w-4xl mx-auto">
                                             <h2 className="text-lg font-bold mb-4">{formTemplate.title}</h2>
-                                            {formTemplate?.fields?.map((field, index) =>
-                                                'fields' in field ? (
-                                                    <div key={index} className="space-y-4">
-                                                        <h3 className="font-semibold text-base">{field.title}</h3>
-                                                        <div className="flex space-x-4">
-                                                            {field.fields.map((subField, subIndex) => (
-                                                                <div key={subIndex} className="flex flex-col w-1/2">
-                                                                    <label htmlFor={subField.name} className="mb-1 font-medium">
-                                                                        {subField.label}
-                                                                    </label>
-                                                                    {subField.type === 'textarea' ? (
-                                                                        <textarea
-                                                                            required
-                                                                            id={subField.name}
-                                                                            name={subField.name}
-                                                                            placeholder={subField.placeholder}
-                                                                            className="p-2 text-sm bg-white dark:bg-neutral-800 text-black dark:text-white border rounded"
-                                                                            onChange={handleFormChange}
-                                                                            value={formValues[subField.name] || ""}
-                                                                        />
-                                                                    ) : (
-                                                                        <input
-                                                                            required
-                                                                            id={subField.name}
-                                                                            type={subField.type}
-                                                                            name={subField.name}
-                                                                            placeholder={subField.placeholder}
-                                                                            className="p-2 text-sm bg-white dark:bg-neutral-800 text-black dark:text-white border rounded"
-                                                                            onChange={handleFormChange}
-                                                                            value={formValues[subField.name] || ""}
-                                                                        />
-                                                                    )}
-                                                                </div>
-                                                            ))}
+                                            {/* MAIN FIELDS AND NESTED GROUPS */}
+                                            <div className="grid grid-cols-2 gap-4">
+                                                {formTemplate?.fields?.map((field, index) =>
+                                                    'fields' in field ? (
+                                                        // NESTED GROUP: full width header + subfields in one row
+                                                        <div key={index} className="col-span-2 space-y-4">
+                                                            <h3 className="font-semibold text-base">{field.title}</h3>
+                                                            {/* Subfields in one row, spaced evenly */}
+                                                            <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-4">
+                                                                {field.fields.map((subField, subIndex) => (
+                                                                    <div key={subIndex} className="flex flex-col">
+                                                                        <label htmlFor={subField.name} className="mb-1 font-medium">
+                                                                            {subField.label}
+                                                                        </label>
+                                                                        {subField.type === 'textarea' ? (
+                                                                            <textarea
+                                                                                required
+                                                                                id={subField.name}
+                                                                                name={subField.name}
+                                                                                placeholder={subField.placeholder}
+                                                                                className="p-2 text-sm bg-white dark:bg-neutral-800 text-black dark:text-white border rounded"
+                                                                                onChange={handleFormChange}
+                                                                                value={formValues[subField.name] || ""}
+                                                                            />
+                                                                        ) : subField.type === 'select' ? (
+                                                                            <select
+                                                                                id={subField.name}
+                                                                                name={subField.name}
+                                                                                className="p-2 text-sm bg-white dark:bg-neutral-800 text-black dark:text-white border rounded"
+                                                                                onChange={handleFormChange}
+                                                                                value={formValues[subField.name] || ''}
+                                                                            >
+                                                                                <option value="">Select an option</option>
+                                                                                {subField.options?.map((opt) => (
+                                                                                    <option key={opt.value} value={opt.value}>
+                                                                                        {opt.label}
+                                                                                    </option>
+                                                                                ))}
+                                                                            </select>
+                                                                        ) : subField.type === 'multiselect' ? (
+                                                                            <div id={subField.name} className="flex flex-col gap-2">
+                                                                                {subField.options?.map((opt) => (
+                                                                                    <label key={opt.value} className="inline-flex items-center gap-2 text-sm text-black dark:text-white">
+                                                                                        <input
+                                                                                            type="checkbox"
+                                                                                            name={subField.name}
+                                                                                            value={opt.value}
+                                                                                            checked={
+                                                                                                Array.isArray(formValues[subField.name]) &&
+                                                                                                (formValues[subField.name] as string[]).includes(opt.value)
+                                                                                            }
+                                                                                            onChange={(e) => {
+                                                                                                const isChecked = e.target.checked;
+                                                                                                setFormValues((prev) => {
+                                                                                                    const current = Array.isArray(prev[subField.name]) ? (prev[subField.name] as string[]) : [];
+                                                                                                    const updated = isChecked
+                                                                                                        ? [...current, opt.value]
+                                                                                                        : current.filter((val: string) => val !== opt.value);
+                                                                                                    return {
+                                                                                                        ...prev,
+                                                                                                        [subField.name]: updated,
+                                                                                                    };
+                                                                                                });
+                                                                                            }}
+                                                                                            className="p-2 border rounded bg-white dark:bg-neutral-800"
+                                                                                        />
+                                                                                        {opt.label}
+                                                                                    </label>
+                                                                                ))}
+                                                                            </div>
+                                                                        ) : (
+                                                                            <input
+                                                                                required
+                                                                                id={subField.name}
+                                                                                type={subField.type}
+                                                                                name={subField.name}
+                                                                                placeholder={subField.placeholder}
+                                                                                className="p-2 text-sm bg-white dark:bg-neutral-800 text-black dark:text-white border rounded"
+                                                                                onChange={handleFormChange}
+                                                                                value={formValues[subField.name] || ""}
+                                                                            />
+                                                                        )}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                ) : (
-                                                    <div key={index} className="flex flex-col">
-                                                    <label htmlFor={field.name} className="mb-1 font-medium">
-                                                        {field.label}
-                                                    </label>
-                                                    {field.type === 'textarea' ? (
-                                                        <textarea
-                                                            required
-                                                            id={field.name}
-                                                            name={field.name}
-                                                            placeholder={field.placeholder}
-                                                            className="p-2 text-sm bg-white dark:bg-neutral-800 text-black dark:text-white border rounded"
-                                                            onChange={handleFormChange}
-                                                            value={formValues[field.name] || ""}
-                                                        />
                                                     ) : (
-                                                        <input
-                                                            required
-                                                            id={field.name}
-                                                            type={field.type}
-                                                            name={field.name}
-                                                            placeholder={field.placeholder}
-                                                            className="p-2 text-sm bg-white dark:bg-neutral-800 text-black dark:text-white border rounded"
-                                                            onChange={handleFormChange}
-                                                            value={formValues[field.name] || ""}
-                                                        />
-                                                    )}
-                                                    </div>
-                                                )
-                                            )}
-                                            {formError && (
-                                                <p className="text-base text-red-700 dark:text-red-500 font-serif">
-                                                    ❌ {submitFormError}
-                                                </p>
-                                            )}
-                                            <button
-                                                type="submit"
-                                                onClick={handleFormSubmit}
-                                                className="px-4 py-2 text-sm bg-black dark:bg-white text-white dark:text-black rounded-full hover:bg-neutral-800 dark:hover:bg-neutral-100"
-                                            >
-                                                {submitForm}
-                                            </button>
+                                                        // SINGLE FIELD, each takes half the width of grid cols-2
+                                                        <div key={index} className="flex flex-col">
+                                                            <label htmlFor={field.name} className="mb-1 font-medium">
+                                                                {field.label}
+                                                            </label>
+                                                            {/* Same input types as above */}
+                                                            {field.type === 'textarea' ? (
+                                                                <textarea
+                                                                    required
+                                                                    id={field.name}
+                                                                    name={field.name}
+                                                                    placeholder={field.placeholder}
+                                                                    className="p-2 text-sm bg-white dark:bg-neutral-800 text-black dark:text-white border rounded"
+                                                                    onChange={handleFormChange}
+                                                                    value={formValues[field.name] || ""}
+                                                                />
+                                                            ) : field.type === 'select' ? (
+                                                                <select
+                                                                    id={field.name}
+                                                                    name={field.name}
+                                                                    className="p-2 text-sm bg-white dark:bg-neutral-800 text-black dark:text-white border rounded"
+                                                                    onChange={handleFormChange}
+                                                                    value={formValues[field.name] || ""}
+                                                                >
+                                                                    <option value="">Select an option</option>
+                                                                    {field.options?.map(opt => (
+                                                                        <option key={opt.value} value={opt.value}>
+                                                                            {opt.label}
+                                                                        </option>
+                                                                    ))}
+                                                                </select>
+                                                            ) : field.type === 'multiselect' ? (
+                                                                <div id={field.name} className="flex flex-col gap-2">
+                                                                    {field.options?.map((opt) => (
+                                                                        <label key={opt.value} className="inline-flex items-center gap-2 text-sm text-black dark:text-white">
+                                                                            <input
+                                                                                type="checkbox"
+                                                                                name={field.name}
+                                                                                value={opt.value}
+                                                                                checked={Array.isArray(formValues[field.name]) && (formValues[field.name] as string[]).includes(opt.value)}
+                                                                                onChange={(e) => {
+                                                                                    const isChecked = e.target.checked;
+                                                                                    setFormValues((prev) => {
+                                                                                        const current = Array.isArray(prev[field.name])
+                                                                                            ? (prev[field.name] as string[])
+                                                                                            : [];
+                                                                                        const updated = isChecked
+                                                                                            ? [...current, opt.value]
+                                                                                            : current.filter((val: string) => val !== opt.value);
+                                                                                        return {
+                                                                                            ...prev,
+                                                                                            [field.name]: updated,
+                                                                                        };
+                                                                                    });
+                                                                                }}
+                                                                                className="p-2 border rounded bg-white dark:bg-neutral-800"
+                                                                            />
+                                                                            {opt.label}
+                                                                        </label>
+                                                                    ))}
+                                                                </div>
+                                                            ) : (
+                                                                <input
+                                                                    required
+                                                                    id={field.name}
+                                                                    type={field.type}
+                                                                    name={field.name}
+                                                                    placeholder={field.placeholder}
+                                                                    className="p-2 text-sm bg-white dark:bg-neutral-800 text-black dark:text-white border rounded"
+                                                                    onChange={handleFormChange}
+                                                                    value={formValues[field.name] || ""}
+                                                                />
+                                                            )}
+                                                        </div>
+                                                    )
+                                                )}
+                                            </div>
+                                            {/* ERROR MESSAGE + BUTTON - NOT AFFECTED BY GRID */}
+                                            <div className="flex flex-col items-center justify-center pt-4 space-y-2">
+                                                {formError && (
+                                                    <p className="text-base text-red-700 dark:text-red-500 font-serif">
+                                                        ❌ {submitFormError}
+                                                    </p>
+                                                )}
+                                                <button
+                                                    type="submit"
+                                                    onClick={handleFormSubmit}
+                                                    className="px-4 py-2 text-sm bg-black dark:bg-white text-white dark:text-black rounded-full hover:bg-neutral-800 dark:hover:bg-neutral-100"
+                                                >
+                                                    {submitForm}
+                                                </button>
+                                            </div>
                                         </form>
                                     </div>
                                 </div>
