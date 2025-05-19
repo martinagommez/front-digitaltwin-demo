@@ -271,8 +271,8 @@ function ChatComponent({
             const apiResponse = response.data.response;
             setSessionId(response.data.session_id);
             setToken(response.data.token);
-            // setFormTemplate(response.data.template_fields);
-            setFormTemplate(exampleTemplate);
+            setFormTemplate(response.data.template_fields);
+            // setFormTemplate(exampleTemplate);
             setIsConfigLoaded(true);
             console.log("Form Template set from backend:", response.data.template_fields);
             // const data: ChatAppResponse = await response.data;
@@ -410,10 +410,12 @@ function ChatComponent({
         setFormTemplate(null);
         setIsConfigLoaded(false);
         setFormValues({});
+        const messageId = new Date().getTime().toString();
         const formData = new FormData();
         // Add keys expected by fetchMessage
         formData.append("user_input", inputText || "");
         formData.append("timestamp", getFormattedTimestamp());
+        formData.append("messageId", messageId);
         formData.append("session_id", sessionId);
         formData.append("token", token);
         formData.append("language", selectedLanguage);
