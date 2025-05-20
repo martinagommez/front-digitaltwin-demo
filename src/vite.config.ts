@@ -5,7 +5,10 @@ import react from '@vitejs/plugin-react-swc'
 export default defineConfig({
     plugins: [react()],
     server: {
-        allowedHosts: ["newui-aif-frontend.azurewebsites.net"]
+        allowedHosts: ["newui-aif-frontend.azurewebsites.net"],
+        hmr: {
+            overlay: false
+        }
     }
 })
 

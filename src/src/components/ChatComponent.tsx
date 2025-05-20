@@ -284,6 +284,7 @@ function ChatComponent({
                 setIsLoading(false);
                 setInputEnable(false);
                 if (index < apiResponse.length) {
+                    // Without typping effect: substitute bellow currentMessage = apiResponse
                     currentMessage += apiResponse[index];
                     setMessages(prevMessages => [
                         ...prevMessages.slice(0, -1),
@@ -298,6 +299,7 @@ function ChatComponent({
                             orch_config_key: pluginKeys!.orch_config_key
                         },
                     ]);
+                    // Without typing effect: comment index and timeout bellow
                     index++;
                     setTimeout(typingEffect, 0);
                 } else {
