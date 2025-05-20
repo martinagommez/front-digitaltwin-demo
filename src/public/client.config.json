@@ -8,13 +8,20 @@
     "pluginsTitle": "Choose one of these options",
     "logo": "https://png.pngtree.com/png-clipart/20240508/original/pngtree-artificial-intelligence-logo-png-image_15034966.png",
     "favicon": "https://png.pngtree.com/png-clipart/20230411/original/pngtree-artificial-intelligence-robot-illustration-png-image_9047239.png",
-    "setupApi": "https://agent-builder-app-orch-1.azurewebsites.net",
+    "setupApi": "https://agent-builder-app-orch-1.azurewebsites.net/setup_api",
+    "feedbackApi": "https://agent-builder-app-orch-1.azurewebsites.net/feedback",
+    "speechKey": "648870b6148d441592fe08cfe7ccca7e",
+    "speechRegion": "westeurope",
+    "cognitiveKey": "DuV41cj59GaV7QF6sAd9hipla1ek6tTVLR3FtRU9lr169hBWkDE4JQQJ99BBAC5RqLJXJ3w3AAAEACOG2Dur",
+    "cognitiveEndpoint": "https://aif-cognitive-service.cognitiveservices.azure.com/",
     "inputEnable": true,
-    "preferedLanguage": "en",
+    "preferedLanguage": "pt-PT",
     "enableFeatures": {
         "enableNewChat": true,
         "enableDarkMode": true,
-        "pluginsTitleOption": false,
+        "enableDebugMode": true,
+        "enableAudio": true,
+        "pluginsTitleOption": true,
         "displayAgents": false,
         "browserLanguage": false,
         "preferenceLanguage": true,
@@ -24,158 +31,25 @@
         "enableExpiredNotification": true,
         "enableExpiredPopup": true,
         "enableEndedNotification": true,
-        "enableEndedPopup": true
+        "enableEndedPopup": true,
+        "isThoughtProcess": true,
+        "isSupportingContent": true,
+        "isCitations": true
     },
     "languages": [
-        { "code": "pt", "label": "Português", "flag": "https://vectorflags.s3.amazonaws.com/flags/pt-circle-01.png" },
-        { "code": "en", "label": "English", "flag": "https://vectorflags.s3.amazonaws.com/flags/uk-circle-01.png" },
-        { "code": "es", "label": "Español", "flag": "https://vectorflags.s3.amazonaws.com/flags/es-circle-01.png" },
-        { "code": "fr", "label": "Français", "flag": "https://vectorflags.s3.amazonaws.com/flags/fr-circle-01.png" },
-        { "code": "de", "label": "Deutsch", "flag": "https://vectorflags.s3.amazonaws.com/flags/de-circle-01.png" },
-        { "code": "it", "label": "Italiano", "flag": "https://vectorflags.s3.amazonaws.com/flags/it-circle-01.png" }
+        { "code": "pt-PT", "label": "Português", "flag": "https://vectorflags.s3.amazonaws.com/flags/pt-circle-01.png" },
+        { "code": "en-US", "label": "English", "flag": "https://vectorflags.s3.amazonaws.com/flags/uk-circle-01.png" },
+        { "code": "es-ES", "label": "Español", "flag": "https://vectorflags.s3.amazonaws.com/flags/es-circle-01.png" },
+        { "code": "fr-FR", "label": "Français", "flag": "https://vectorflags.s3.amazonaws.com/flags/fr-circle-01.png" },
+        { "code": "de-DE", "label": "Deutsch", "flag": "https://vectorflags.s3.amazonaws.com/flags/de-circle-01.png" },
+        { "code": "it-IT", "label": "Italiano", "flag": "https://vectorflags.s3.amazonaws.com/flags/it-circle-01.png" }
     ],
-    "endedText": {
-        "pt": "A sua sessão terminou",
-        "en": "Your session has ended",
-        "es": "Tu sesión ha terminado",
-        "fr": "Votre session est terminée",
-        "de": "Ihre Sitzung ist beendet",
-        "it": "La tua sessione è terminata"
-    },
-    "endedSubtext": {
-        "pt": "Atualize para começar um novo chat.",
-        "en": "Update to begin a new chat.",
-        "es": "Actualiza para iniciar un nuevo chat.",
-        "fr": "Actualisez pour commencer une nouvelle discussion.",
-        "de": "Aktualisieren, um einen neuen Chat zu starten.",
-        "it": "Aggiorna per iniziare una nuova chat."
-    },
-    "expiredText": {
-        "pt": "A sua sessão expirou",
-        "en": "Your session has expired",
-        "es": "Tu sesión ha caducado",
-        "fr": "Votre session a expiré",
-        "de": "Ihre Sitzung ist abgelaufen",
-        "it": "La tua sessione è scaduta"
-    },
-    "expiredSubtext": {
-        "pt": "Atingiu o tempo limite da sessão. Por favor atualize a página.",
-        "en": "You've reached the session's limit time. Please update the page.",
-        "es": "Se agotó el tiempo de sesión. Por favor actualice la página.",
-        "fr": "Vous avez atteint la limite de temps de la session. Veuillez actualiser la page.",
-        "de": "Sie haben das Zeitlimit der Sitzung erreicht. Bitte aktualisieren Sie die Seite.",
-        "it": "Hai raggiunto il limite di tempo della sessione. Aggiorna la pagina."
-    },
-    "updateButton": {
-        "pt": "Atualizar",
-        "en": "Update",
-        "es": "Actualizar",
-        "fr": "Actualiser",
-        "de": "Aktualisieren",
-        "it": "Aggiorna"
-    },
-    "newChatButton": {
-        "pt": "Novo Chat",
-        "en": "New Chat",
-        "es": "Nuevo chat",
-        "fr": "Nouvelle discussion",
-        "de": "Neuer Chat",
-        "it": "Nuova chat"
-    },
-    "darkModeButton": {
-        "pt": "Modo Escuro",
-        "en": "Dark Mode",
-        "es": "Modo oscuro",
-        "fr": "Mode sombre",
-        "de": "Dunkler Modus",
-        "it": "Modalità scura"
-    },
-    "lightModeButton": {
-        "pt": "Modo Claro",
-        "en": "Light Mode",
-        "es": "Modo de luz",
-        "fr": "Mode clair",
-        "de": "Heller Modus",
-        "it": "Modalità chiara"
-    },
-    "chatPlaceholder": {
-        "pt": "Escreva aqui a sua mensagem...",
-        "en": "Write your message here...",
-        "es": "Escribe tu mensaje aquí...",
-        "fr": "Écrivez votre message ici...",
-        "de": "Schreiben Sie Ihre Nachricht hier...",
-        "it": "Scrivi qui il tuo messaggio..."
-    },
-    "availableLanguagesTitle": {
-        "pt": "Idiomas disponíveis",
-        "en": "Available languages",
-        "es": "Idiomas disponibles",
-        "fr": "Langues disponibles",
-        "de": "Verfügbare Sprachen",
-        "it": "Lingue disponibili"
-    },
-    "uploadFilesText": {
-        "pt": "Enviar arquivos",
-        "en": "Upload Files",
-        "es": "Subir archivos",
-        "fr": "Téléverser des fichiers",
-        "de": "Dateien hochladen",
-        "it": "Carica file"
-    },
-    "uploadedFilesText": {
-        "pt": "Arquivos enviados",
-        "en": "Uploaded Files",
-        "es": "Archivos subidos",
-        "fr": "Fichiers téléversés",
-        "de": "Hochgeladene Dateien",
-        "it": "File caricati"
-    },
-    "processedFilesText": {
-        "pt": "Arquivos processados",
-        "en": "Processed Files",
-        "es": "Archivos procesados",
-        "fr": "Fichiers traités",
-        "de": "Verarbeitete Dateien",
-        "it": "File elaborati"
-    },
-    "dragDropText": {
-        "pt": "Arraste e solte seus arquivos aqui ou clique para enviar",
-        "en": "Drag and drop your files here or click to upload",
-        "es": "Arrastra y suelta tus archivos aquí o haz clic para subirlos",
-        "fr": "Glissez-déposez vos fichiers ici ou cliquez pour téléverser",
-        "de": "Ziehen Sie Ihre Dateien hierher oder klicken Sie, um sie hochzuladen",
-        "it": "Trascina e rilascia i tuoi file qui o clicca per caricare"
-    },
-    "noUploadText": {
-        "pt": "Nenhum arquivo enviado",
-        "en": "No files uploaded",
-        "es": "No se han subido archivos",
-        "fr": "Aucun fichier téléversé",
-        "de": "Keine Dateien hochgeladen",
-        "it": "Nessun file caricato"
-    },
-    "noProcessText": {
-        "pt": "Nenhum arquivo processado",
-        "en": "No files processed",
-        "es": "No se han procesado archivos",
-        "fr": "Aucun fichier traité",
-        "de": "Keine Dateien verarbeitet",
-        "it": "Nessun file elaborato"
-    },
-    "messageText": {
-        "pt": "Mensagem",
-        "en": "Message",
-        "es": "Mensaje",
-        "fr": "Message",
-        "de": "Nachricht",
-        "it": "Messaggio"
-    },
-    "noPreviewText": {
-        "pt": "Pré-visualização não suportada para este tipo de arquivo.",
-        "en": "Preview not supported for this file type.",
-        "es": "Vista previa no compatible para este tipo de archivo.",
-        "fr": "Aperçu non pris en charge pour ce type de fichier.",
-        "de": "Vorschau für diesen Dateityp nicht unterstützt.",
-        "it": "Anteprima non supportata per questo tipo di file."
+    "voices": {
+        "pt-PT": "pt-PT-FernandaNeural",
+        "en-US": "en-US-JennyNeural",
+        "es-ES": "es-ES-AlvaroNeural",
+        "fr-FR": "fr-FR-DeniseNeural",
+        "de-DE": "de-DE-KatjaNeural",
+        "it-IT": "it-IT-ElsaNeural"
     }
 }

@@ -11,10 +11,7 @@ export interface PluginMeta {
     PluginKeys: PluginKeys
 }
 
-
 export interface PluginKeys {
     orch_config_id: string,
     orch_config_key: string,
 }
-
-

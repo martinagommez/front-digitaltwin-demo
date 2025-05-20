@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'; 
+import { useState } from 'react'; 
 import axios from 'axios';
 import { PluginMeta } from '../models/requests/PluginApi';
 import { FiImage, FiFile, FiPaperclip, FiTrash2, FiMinus, FiPlus, FiDownload, FiUpload, FiCheckSquare, FiX, FiSend, FiSidebar } from "react-icons/fi";
@@ -16,12 +16,14 @@ pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/$
 interface FilesProcessingProps {
     activedPlugin: PluginMeta | null;
     setActivedPlugin: React.Dispatch<React.SetStateAction<PluginMeta | null>>;
-    isSidebarOpen: boolean;
-    setIsSidebarOpen: (open: boolean) => void;
+    debugMode: boolean;
+    setDebugMode: React.Dispatch<React.SetStateAction<boolean>>; 
+    isFilesSidebarOpen: boolean;
+    setIsFilesSidebarOpen: (open: boolean) => void;
     selectedLanguage: string;
 }
 
-function FilesProcessing({ activedPlugin, setActivedPlugin, isSidebarOpen, setIsSidebarOpen, selectedLanguage }: FilesProcessingProps) {
+function FilesProcessing({ activedPlugin, setActivedPlugin, isFilesSidebarOpen, setIsFilesSidebarOpen, selectedLanguage }: FilesProcessingProps) {
     const [inputText, setInputText] = useState<string>('files');
     const [files, setFiles] = useState<File[]>([]);
     const [previewFile, setPreviewFile] = useState<File | null>(null);
@@ -71,7 +73,7 @@ function FilesProcessing({ activedPlugin, setActivedPlugin, isSidebarOpen, setIs
     const handlePreviewFile = async (file: File) => {
         setPreviewFile(file);
         setTextPreview(null);
-        setIsSidebarOpen(true);
+        setIsFilesSidebarOpen(true);
         if (file.type.startsWith("text/")) {
             const reader = new FileReader();
             reader.onload = (event) => setTextPreview(event.target?.result as string);
@@ -128,7 +130,7 @@ function FilesProcessing({ activedPlugin, setActivedPlugin, isSidebarOpen, setIs
         //         throw new Error('Failed to upload files');
         //     }
         //     alert("Files uploaded successfully!");
-        //     setIsSidebarOpen(false);
+        //     setIsFilesSidebarOpen(false);
         //     setInputText("files");
         //     setFiles([]);  // Clear files after successful upload
         // } catch (error) {
@@ -138,7 +140,7 @@ function FilesProcessing({ activedPlugin, setActivedPlugin, isSidebarOpen, setIs
         // }
         console.log(formData);
         alert("Files uploaded successfully!");
-        setIsSidebarOpen(false);
+        setIsFilesSidebarOpen(false);
         setInputText("files");
         setFiles([]);
         setLoading(false);
@@ -168,7 +170,7 @@ function FilesProcessing({ activedPlugin, setActivedPlugin, isSidebarOpen, setIs
     //             console.log("Files uploaded successfully!");
     //             // Optionally, clear the files after upload simulation
     //             setFiles([]);
-    //             setIsSidebarOpen(false);
+    //             setIsFilesSidebarOpen(false);
     //             alert("Files uploaded successfully!");
     //             setLoading(false);
     //         }, 2000); // Simulate a delay of 2 seconds
@@ -187,13 +189,13 @@ function FilesProcessing({ activedPlugin, setActivedPlugin, isSidebarOpen, setIs
         setIsShaking(true); // Trigger shake effect
         setFiles([]); // Clear files
         setTimeout(() => setIsShaking(false), 500); // Remove animation after 0.5s
-        setIsSidebarOpen(false);
+        setIsFilesSidebarOpen(false);
         setPreviewFile(null);
         setTextPreview(null);
     };       
 
     const closeSidebar = () => {
-        setIsSidebarOpen(false);
+        setIsFilesSidebarOpen(false);
         setPreviewFile(null);
         setTextPreview(null);
     };
@@ -238,12 +240,13 @@ function FilesProcessing({ activedPlugin, setActivedPlugin, isSidebarOpen, setIs
     const noProcessText = languageData?.noProcessText?.[selectedLanguage] || "No files processed";
     const messageText = languageData?.messageText?.[selectedLanguage] || "Message";
     const noPreviewText = languageData?.noPreviewText?.[selectedLanguage] || "Preview not supported for this file type.";
+    const deleteAllButton = languageData?.deleteAllButton?.[selectedLanguage] || "Delete all";
 
     return (
         <div className="flex w-full h-screen"> {/* Main flex container */}
             {/* Main UI */}
             <div
-                className={`${isSidebarOpen ? "w-1/2" : "w-full"} flex flex-col items-center justify-start p-4`}
+                className={`${isFilesSidebarOpen ? "w-1/2" : "w-full"} flex flex-col items-center justify-start p-4`}
             >
                 {/* Upload Files */}
                 <div className="flex flex-col items-center justify-center w-full md:h-[calc((100vh-7rem)/2-2rem)] h-[calc((100vh-6rem)/2-2rem)] p-4 border-2 border-neutral-300 dark:border-neutral-600 rounded-lg">
@@ -282,6 +285,7 @@ function FilesProcessing({ activedPlugin, setActivedPlugin, isSidebarOpen, setIs
                                 </h1>
                                 <div className="absolute top-0 right-0 flex flex-row items-center justify-end">
                                     <button
+                                        title={deleteAllButton}
                                         className={`flex items-center justify-center w-6 h-6 md:w-8 md:h-8 md:text-lg text-sm font-bold ml-1 mb-1 border-2 border-neutral-300 dark:border-neutral-500 rounded-full
                                             ${loading ? 'cursor-not-allowed' : ''} 
                                             text-neutral-800 dark:text-neutral-200 bg-neutral-200 hover:bg-neutral-300 dark:bg-neutral-600 dark:hover:bg-neutral-500
@@ -292,6 +296,7 @@ function FilesProcessing({ activedPlugin, setActivedPlugin, isSidebarOpen, setIs
                                         <FiTrash2 />
                                     </button>
                                     <button
+                                        title={uploadFilesText}
                                         className={`flex items-center justify-center w-6 h-6 md:w-8 md:h-8 md:text-lg text-sm font-bold ml-1 mb-1 border-2 border-neutral-300 dark:border-neutral-500 rounded-full
                                             ${loading ? 'cursor-not-allowed' : ''} 
                                             text-neutral-800 dark:text-neutral-200 bg-neutral-200 hover:bg-neutral-300 dark:bg-neutral-600 dark:hover:bg-neutral-500`}
@@ -404,7 +409,7 @@ function FilesProcessing({ activedPlugin, setActivedPlugin, isSidebarOpen, setIs
                 </div>
             </div>
             {/* Sidebar */}
-            {isSidebarOpen && (
+            {isFilesSidebarOpen && (
                 <div className="w-1/2 h-screen bg-white dark:bg-neutral-800 border-l shadow-lg p-4 flex flex-col">
                     <div className="flex flex-row justify-between items-center w-full">
                         <h2 className="flex flex-row items-center md:text-lg text-sm font-bold text-neutral-800 dark:text-white p-0">

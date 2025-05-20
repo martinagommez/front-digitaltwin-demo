@@ -1,11 +1,11 @@
-import AssistenteVirtual from "./components/AssistenteVirtual";
+import VirtualAssistent from "./components/VirtualAssistent";
 import { LanguageProvider } from './components/LanguageContext';
 import { useEffect, useState  } from "react";
 
 function App() {
 	const [configTitle, setConfigTitle] = useState<string>('Home page');
 	useEffect(() => {
-		// Fetch the title from client.config.json
+		// Fetch the title from client json
 		const fetchConfig = async () => {
 			try {
 				const response = await fetch('/client.config.json');
@@ -22,7 +22,7 @@ function App() {
 	}, [configTitle]);
 	return (
 		<LanguageProvider>
-			<AssistenteVirtual />
+			<VirtualAssistent />
 		</LanguageProvider>
 	);
 }

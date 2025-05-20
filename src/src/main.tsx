@@ -1,5 +1,5 @@
 import ReactDOM from 'react-dom/client';
-import App from './App';
+import App from './App.tsx';
 import './index.css';
 
 // Function to update favicon dynamically
@@ -10,7 +10,7 @@ const updateFavicon = async () => {
         const config = await response.json();
 
         // Extract the favicon URL from the JSON
-        const faviconUrl = config.favicon || '/favicon.ico';
+        const faviconUrl = config.favicon || '';
 
         // Update the favicon in the document head
         const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
