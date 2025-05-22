@@ -276,7 +276,7 @@ function VirtualAssistent() {
 	return (
 		<div className="flex flex-col bg-neutral-100 dark:bg-neutral-950">
 			{/* Header */}
-			<header className="bg-white dark:bg-neutral-900 shadow-md p-4 h-20 md:h-24">
+			<header className="bg-white dark:bg-neutral-900 shadow-md p-4 h-20">
 				<div className="flex items-center justify-between w-full gap-4">
 					{/* Logo */}
 					<div className="flex items-center min-w-0">
@@ -421,7 +421,7 @@ function VirtualAssistent() {
 
 			{/* Language Selection and Chat Box */}
 			{isConfigLoaded && showLanguageSelection ? (
-				<div className=" flex flex-col flex-grow h-[calc(100vh-5rem)] md:h-[calc(100vh-6rem)] p-4 items-center justify-center border-2
+				<div className=" flex flex-col flex-grow h-[calc(100vh-5rem)] p-4 items-center justify-center border-2
 					bg-neutral-100 dark:bg-neutral-900 border-neutral-400 dark:border-neutral-600">
 					<h2 className="text-lg md:text-xl font-semibold text-neutral-900 dark:text-white">Welcome to our chat</h2>	
 					<h2 className="text-lg md:text-xl font-semibold mb-8 text-neutral-900 dark:text-white">Choose your language to start</h2>
@@ -439,7 +439,7 @@ function VirtualAssistent() {
 					</div>
 				</div>
 			) : (activedPlugin === null && (
-				<div className="flex flex-col flex-grow h-[calc(100vh-5rem)] md:h-[calc(100vh-6rem)] p-4 items-center justify-center border-2
+				<div className="flex flex-col flex-grow h-[calc(100vh-5rem)] p-4 items-center justify-center border-2
 					bg-neutral-100 dark:bg-neutral-900 border-neutral-400 dark:border-neutral-600
 					[&::-webkit-scrollbar]:w-2
 					[&::-webkit-scrollbar-track]:rounded-full
@@ -495,7 +495,7 @@ function VirtualAssistent() {
 			))}
 
 			{pluginType === 'files' && (	
-				<div className={`flex-grow h-[calc(100vh-5rem)] md:h-[calc(100vh-6rem)] p-4 flex items-center justify-center 
+				<div className={`flex-grow h-[calc(100vh-5rem)] p-4 flex items-center justify-center 
 					${isFilesSidebarOpen ? 'w-full' : ''}
 					`}>
 					<div className={`flex w-full h-full
@@ -516,7 +516,7 @@ function VirtualAssistent() {
 			)}
 
 			{pluginType === 'chatbot' && activedPlugin && (	
-				<div className={`flex-grow h-[calc(100vh-5rem)] md:h-[calc(100vh-6rem)] p-4 flex items-center justify-center 
+				<div className={`flex-grow h-[calc(100vh-5rem)] p-4 flex items-center justify-center 
 					${isChatSidebarOpen ? 'w-full' : ''}
 					`}>
 					<div className={`flex w-full h-full 

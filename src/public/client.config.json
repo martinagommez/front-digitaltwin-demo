@@ -19,7 +19,7 @@
     "enableFeatures": {
         "enableNewChat": true,
         "enableDarkMode": true,
-        "enableDebugMode": true,
+        "enableDebugMode": false,
         "enableAudio": true,
         "pluginsTitleOption": true,
         "displayAgents": false,
