@@ -129,105 +129,6 @@ function ChatComponent({
         }
     };
 
-    const exampleTemplate: Template = {
-        title: "Intent Configuration Form",
-        fields: [
-          {
-            label: "Bot Name",
-            type: "text",
-            name: "botName",
-            placeholder: "Enter bot name"
-          },
-          {
-            label: "Bot Description",
-            type: "textarea",
-            name: "botDescription",
-            placeholder: "Describe the bot's purpose"
-          },
-          {
-            label: "Primary Intent",
-            type: "select",
-            name: "primaryIntent",
-            options: [
-              { label: "Greeting", value: "greeting" },
-              { label: "Goodbye", value: "goodbye" },
-              { label: "FAQ", value: "faq" }
-            ]
-          },
-          {
-            label: "Related Intents",
-            type: "multiselect",
-            name: "relatedIntents",
-            options: [
-              { label: "Order Status", value: "order_status" },
-              { label: "Cancel Order", value: "cancel_order" },
-              { label: "Shipping Info", value: "shipping_info" },
-              { label: "Returns", value: "returns" }
-            ]
-          },
-          // Nested group of subfields example:
-          {
-            title: "Response Settings",
-            fields: [
-              {
-                label: "Response Type",
-                type: "select",
-                name: "responseType",
-                options: [
-                  { label: "Text", value: "text" },
-                  { label: "Audio", value: "audio" },
-                  { label: "Video", value: "video" }
-                ]
-              },
-              {
-                label: "Response Text",
-                type: "textarea",
-                name: "responseText",
-                placeholder: "Enter the default response"
-              },
-              {
-                label: "Enable Fallback",
-                type: "select",
-                name: "enableFallback",
-                options: [
-                  { label: "Yes", value: "yes" },
-                  { label: "No", value: "no" }
-                ]
-              },
-              {
-                label: "Fallback Responses",
-                type: "multiselect",
-                name: "fallbackResponses",
-                options: [
-                  { label: "Sorry, can you repeat?", value: "repeat" },
-                  { label: "I didn't get that", value: "not_understood" },
-                  { label: "Please rephrase", value: "rephrase" }
-                ]
-              }
-            ]
-          },
-          // Another nested group for advanced options:
-          {
-            title: "Advanced Options",
-            fields: [
-              {
-                label: "Confidence Threshold",
-                type: "text",
-                name: "confidenceThreshold",
-                placeholder: "e.g. 0.7"
-              },
-              {
-                label: "Max Retry Attempts",
-                type: "text",
-                name: "maxRetries",
-                placeholder: "e.g. 3"
-              }
-            ]
-          }
-        ]
-      };
-      
-
     useEffect(() => {
         console.log("Setting answer:", exampleAnswer);
         setAnswer(exampleAnswer);
@@ -898,7 +799,7 @@ function ChatComponent({
                                             {/* Analysis Sidebar Button */}
                                             <button
                                                 onClick={() => handleAnalysis()}
-                                                className="w-6 h-6 text-black dark:text-white hover:text-neutral-700 dark:hover:text-neutral-300"
+                                                className="hidden w-6 h-6 text-black dark:text-white hover:text-neutral-700 dark:hover:text-neutral-300"
                                             >
                                                 <FiSidebar className="w-4 h-4" />
                                             </button>
@@ -969,7 +870,7 @@ function ChatComponent({
                                     {/* Buttons for each message: Like, Dislike and Audio*/}
                                     {message.text && !(index === messages.length - 1 && !inputEnable) && (
                                         <div key={message.id} className={`flex ${message.sender === 'user' ? 'hidden' : 'justify-start'}`}>
-                                            <button
+                                            {/* <button
                                                 onClick={() => handleFeedback(message.id, "like")}
                                                 className="flex items-center justify-center w-5 h-5 mr-1
                                                     text-black dark:text-white hover:text-neutral-700 dark:hover:text-neutral-300"
@@ -990,7 +891,7 @@ function ChatComponent({
                                                 ) : (
                                                     <AiOutlineDislike className="w-5 h-5" />
                                                 )}
-                                            </button>
+                                            </button> */}
                                             <button
                                                 title={playingMessageId === message.id ? audioPauseButton : audioPlayButton}
                                                 onClick={() => {console.log("🎵 Play/Pause - message.id onClick:", message.id); playChatbotResponse(message.text, message.id);}}
@@ -1278,7 +1179,7 @@ function ChatComponent({
                                                             <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-4">
                                                                 {field.fields.map((subField, subIndex) => (
                                                                     <div key={subIndex} className="flex flex-col">
-                                                                        <label htmlFor={subField.name} className="mb-1 font-medium">
+                                                                        <label htmlFor={subField.name} className="mb-1 text-left font-medium">
                                                                             {subField.label}
                                                                         </label>
                                                                         {subField.type === 'textarea' ? (
@@ -1356,7 +1257,7 @@ function ChatComponent({
                                                     ) : (
                                                         // SINGLE FIELD, each takes half the width of grid cols-2
                                                         <div key={index} className="flex flex-col">
-                                                            <label htmlFor={field.name} className="mb-1 font-medium">
+                                                            <label htmlFor={field.name} className="mb-1 text-left font-medium">
                                                                 {field.label}
                                                             </label>
                                                             {/* Same input types as above */}

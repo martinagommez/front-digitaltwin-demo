@@ -481,8 +481,8 @@ function VirtualAssistent() {
 										setPluginType(plugin.PluginType);
 										setPluginKeys(plugin.PluginKeys);
 									}}
-									className="border border-[var(--client-color)] text-[var(--client-color)] 
-										dark:border-[var(--client-color-dark)] dark:text-[var(--client-color-dark)] 
+									className="border border-[var(--client-color)] text-[var(--client-color)] bg-white
+										dark:border-[var(--client-color-dark)] dark:text-[var(--client-color-dark)] dark:bg-neutral-800
 										rounded-lg p-4 text-sm md:text-lg text-center 
 										w-[50vw] md:w-[30vw] max-w-[300px] h-[70px] md:h-[100px] flex-shrink-0"
 								>
