@@ -1278,7 +1278,7 @@ function ChatComponent({
                                                             <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-4">
                                                                 {field.fields.map((subField, subIndex) => (
                                                                     <div key={subIndex} className="flex flex-col">
-                                                                        <label htmlFor={subField.name} className="mb-1 font-medium">
+                                                                        <label htmlFor={subField.name} className="mb-1 text-left font-medium">
                                                                             {subField.label}
                                                                         </label>
                                                                         {subField.type === 'textarea' ? (
@@ -1356,7 +1356,7 @@ function ChatComponent({
                                                     ) : (
                                                         // SINGLE FIELD, each takes half the width of grid cols-2
                                                         <div key={index} className="flex flex-col">
-                                                            <label htmlFor={field.name} className="mb-1 font-medium">
+                                                            <label htmlFor={field.name} className="mb-1 text-left font-medium">
                                                                 {field.label}
                                                             </label>
                                                             {/* Same input types as above */}
