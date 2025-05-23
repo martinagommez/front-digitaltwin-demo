@@ -50,9 +50,10 @@ interface ChatComponentProps {
 
 type FormField = {
     label: string;
-    type: string; // 'text', 'textarea', etc.
+    type: string; // 'text', 'textarea', 'select', 'multiselect', etc.
     name: string;
     placeholder?: string;
+    latest_value?: string;
     options?: { label: string; value: string }[]; 
 };
 
@@ -285,7 +286,8 @@ function ChatComponent({
                 setInputEnable(false);
                 if (index < apiResponse.length) {
                     // Without typping effect: substitute bellow currentMessage = apiResponse
-                    currentMessage += apiResponse[index];
+                    currentMessage = apiResponse;
+                    // currentMessage += apiResponse[index];
                     setMessages(prevMessages => [
                         ...prevMessages.slice(0, -1),
                         { 
@@ -299,9 +301,10 @@ function ChatComponent({
                             orch_config_key: pluginKeys!.orch_config_key
                         },
                     ]);
-                    // Without typing effect: comment index and timeout bellow
-                    index++;
-                    setTimeout(typingEffect, 0);
+                    // Without typing effect: comment index and timeout bellow and uncomment setInputEnable
+                    // index++;
+                    // setTimeout(typingEffect, 0);
+                    setInputEnable(true);
                 } else {
                     setInputEnable(true);
                     if (response.data.end_chat === "END_CHAT") {
@@ -355,6 +358,31 @@ function ChatComponent({
         console.log("Form Template set (effect):", formTemplate);
         console.log("Is Config Loaded (effect):", isConfigLoaded);
     }, [formTemplate, isConfigLoaded]);
+
+    useEffect(() => {
+        if (!formTemplate || !formTemplate.fields) return;
+        // Flatten any nested field groups (if your template structure supports groups)
+        const allFields = formTemplate.fields.flatMap(field =>
+            'fields' in field ? field.fields : [field]
+        );
+        // Build initial values from latest_value
+        const initialValues: Record<string, string | string[]> = {};
+        allFields.forEach((field) => {
+            if (field.latest_value !== undefined) {
+                if (field.type === 'multiselect') {
+                    // Ensure multiselect values are stored as arrays
+                    initialValues[field.name] = Array.isArray(field.latest_value)
+                        ? field.latest_value
+                        : String(field.latest_value).split(',').map(val => val.trim());
+                } else {
+                    initialValues[field.name] = String(field.latest_value);
+                }
+            }
+        });
+
+        // Update formValues
+        setFormValues(initialValues);
+    }, [formTemplate]);
 
     const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -1313,7 +1341,7 @@ function ChatComponent({
                                                                                         <input
                                                                                             type="checkbox"
                                                                                             name={subField.name}
-                                                                                            value={opt.value}
+                                                                                            value={formValues[subField.name] || ''}
                                                                                             checked={
                                                                                                 Array.isArray(formValues[subField.name]) &&
                                                                                                 (formValues[subField.name] as string[]).includes(opt.value)
@@ -1392,7 +1420,7 @@ function ChatComponent({
                                                                             <input
                                                                                 type="checkbox"
                                                                                 name={field.name}
-                                                                                value={opt.value}
+                                                                                value={formValues[field.name] || ""}
                                                                                 checked={Array.isArray(formValues[field.name]) && (formValues[field.name] as string[]).includes(opt.value)}
                                                                                 onChange={(e) => {
                                                                                     const isChecked = e.target.checked;
