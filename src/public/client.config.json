@@ -8,7 +8,7 @@
     "pluginsTitle": "Choose one of these options",
     "logo": "https://greenvolt.com/wp-content/uploads/2023/07/Greenvolt-New-Logo-1-e1689966477920.png",
     "favicon": "https://sdn.signalhire.co/storage/company/b40b/8e43/c654/e925/0969/dae2/317c/8736.webp",
-    "setupApi": "https://agent-builder-app-orch-1.azurewebsites.net/setup_api",
+    "setupApi": "https://greenvolt-app-orch-1.azurewebsites.net/setup_api",
     "feedbackApi": "https://agent-builder-app-orch-1.azurewebsites.net/feedback",
     "speechKey": "648870b6148d441592fe08cfe7ccca7e",
     "speechRegion": "westeurope",

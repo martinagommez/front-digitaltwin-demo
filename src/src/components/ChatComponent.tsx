@@ -3,7 +3,7 @@ import { useDebounce } from 'use-debounce';
 import * as sdk from "microsoft-cognitiveservices-speech-sdk";
 import { FaFileAlt, FaPause, FaPlay } from "react-icons/fa";
 import { FiImage, FiFile, FiX, FiSend, FiSlash, FiChevronDown, FiChevronUp, FiCheck, FiCopy, FiSidebar } from "react-icons/fi";
-import { AiOutlineLike, AiOutlineDislike, AiFillLike, AiFillDislike } from "react-icons/ai";
+// import { AiOutlineLike, AiOutlineDislike, AiFillLike, AiFillDislike } from "react-icons/ai";
 import Modal from 'react-modal';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
@@ -73,8 +73,8 @@ function ChatComponent({
 }: ChatComponentProps) {
     const [inputText, setInputText] = useState<string>('');
     const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
-    const [messageFeedback, setMessageFeedback] = useState<{ [id: string]: "like" | "dislike" | null }>({});
-	const [feedbackApi, setFeedbackApi] = useState<string>('');
+    // const [messageFeedback, setMessageFeedback] = useState<{ [id: string]: "like" | "dislike" | null }>({});
+	// const [feedbackApi, setFeedbackApi] = useState<string>('');
     const [messages, setMessages] = useState<Message[]>([]);
     const [playingMessageId, setPlayingMessageId] = useState<string | null>(null);
     const [isUserAtBottom, setIsUserAtBottom] = useState<boolean>(true);
@@ -390,32 +390,32 @@ function ChatComponent({
         }
     };
 
-    const sendFeedbackToBackend = async (messageId: string, feedback: "like" | "dislike" | null) => {
-        try {
-            await fetch(feedbackApi, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ messageId, feedback }),
-            });
-        } catch (error) {
-            console.error("Error sending feedback:", error);
-        }
-    };
+    // const sendFeedbackToBackend = async (messageId: string, feedback: "like" | "dislike" | null) => {
+    //     try {
+    //         await fetch(feedbackApi, {
+    //             method: "POST",
+    //             headers: { "Content-Type": "application/json" },
+    //             body: JSON.stringify({ messageId, feedback }),
+    //         });
+    //     } catch (error) {
+    //         console.error("Error sending feedback:", error);
+    //     }
+    // };
 
-    const handleFeedback = (messageId: string, type: "like" | "dislike") => {
-        setMessageFeedback(prev => {
-            const current = prev[messageId];
-            let updatedType: "like" | "dislike" | null;
-            if (current === type) {
-                updatedType = null; // Deselect if already selected
-            } else {
-                updatedType = type; // Set the new type
-            }
-            // Send to backend
-            sendFeedbackToBackend(messageId, updatedType);
-            return { ...prev, [messageId]: updatedType };
-        });
-    };
+    // const handleFeedback = (messageId: string, type: "like" | "dislike") => {
+    //     setMessageFeedback(prev => {
+    //         const current = prev[messageId];
+    //         let updatedType: "like" | "dislike" | null;
+    //         if (current === type) {
+    //             updatedType = null; // Deselect if already selected
+    //         } else {
+    //             updatedType = type; // Set the new type
+    //         }
+    //         // Send to backend
+    //         sendFeedbackToBackend(messageId, updatedType);
+    //         return { ...prev, [messageId]: updatedType };
+    //     });
+    // };
 
     const handleAnalysis = async () => {
         setIsChatSidebarOpen(true);
@@ -642,7 +642,7 @@ function ChatComponent({
                         displayAgents: data.enableFeatures.displayAgents ?? true,
 					});
 				}
-                setFeedbackApi(data.feedbackApi || '');
+                // setFeedbackApi(data.feedbackApi || '');
                 console.log('Language Data:', data);
 			} catch (error) {
 				console.error('Error fetching button states:', error);
