@@ -1,0 +1,69 @@
+trigger:
+  branches:
+    include:
+      - greenvolt
+
+variables:
+  containerRegistry: 'lisboncr1.azurecr.io'
+  containerRepository: 'greenvoltfront' 
+  imageTag: '$(Build.BuildId)'
+
+stages:
+
+- stage: Build
+  displayName: "Build & Push Docker Image"
+  jobs:
+    - job: BuildDocker
+      displayName: "Build Docker Image"
+      pool:
+        vmImage: 'ubuntu-latest'
+
+      steps:
+      - task: Docker@2
+        displayName: "Login to Azure Container Registry"
+        inputs:
+          containerRegistry: 'Lisbon ACR Push Service Connection'
+          command: 'login'
+
+      - script: |
+          echo "Building Docker image from the specified folder..."
+          docker build \
+            -f src/Dockerfile \
+            -t $(containerRegistry)/$(containerRepository):$(imageTag) \
+            src
+
+          echo "Pushing Docker image to ACR..."
+          docker push $(containerRegistry)/$(containerRepository):$(imageTag)
+        displayName: "Build & Push Docker Image"
+
+      - script: |
+          echo "Tagging as latest and pushing..."
+          docker tag $(containerRegistry)/$(containerRepository):$(imageTag) $(containerRegistry)/$(containerRepository):latest
+          docker push $(containerRegistry)/$(containerRepository):latest
+        displayName: "Tag & Push Latest"
+
+
+
+- stage: Deploy
+  displayName: "Deploy to Azure Web App"
+  dependsOn: Build
+  jobs:
+    - job: DeployWebApp
+      displayName: "Deploy to Web App for Containers"
+      pool:
+        vmImage: 'ubuntu-latest'
+
+
+      steps:
+      - task: AzureWebAppContainer@1
+        displayName: "Deploy to Web App (Container)"
+        inputs:
+          azureSubscription: 'Innovation Iberia (552c5244-aedc-46b1-9138-7052641b9a00)'
+          appName: 'greenvolt-app-front-2'
+          resourceGroupName: 'rg_greenvolt'
+          # The container to pull from your ACR
+          containers: '$(containerRegistry)/$(containerRepository):$(imageTag)'
+          # If you need environment variables for the container:
+          # containerEnvironmentVariables: |
+          #   ENV_VAR1=value1
+          #   ENV_VAR2=value2
