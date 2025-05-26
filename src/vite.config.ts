@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react-swc'
 export default defineConfig({
     plugins: [react()],
     server: {
-        allowedHosts: ["newui-aif-frontend.azurewebsites.net"],
+        allowedHosts: ["greenvolt-app-front-2.azurewebsites.net"],
         hmr: {
             overlay: false
         }
