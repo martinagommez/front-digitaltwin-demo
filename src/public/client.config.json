@@ -24,7 +24,7 @@
         "pluginsTitleOption": false,
         "displayAgents": false,
         "browserLanguage": false,
-        "preferenceLanguage": true,
+        "preferenceLanguage": false,
         "enableLanguages": true,
         "enableFiles": true,
         "enableImages": true,
