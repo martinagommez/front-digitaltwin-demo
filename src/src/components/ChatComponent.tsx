@@ -23,7 +23,7 @@ interface Message {
     id: string;
     files?: File[];
     images: string[]; // user-uploaded images
-    image?: string[]; // backend-generated images
+    bot_image?: string[]; // backend-generated images
     sender: 'user' | 'bot' | 'debug' | 'websocket';
     agent?: string;
     orch_config_id: string|undefined;
@@ -191,7 +191,7 @@ function ChatComponent({
                     // currentMessage += apiResponse[index];
                     currentMessage = apiResponse;
                     // Check if image URL exists
-                    const botImage = response.data.image ? [response.data.image] : [];
+                    const botImage = response.data.bot_image ? [response.data.bot_image] : [];
                     setMessages(prevMessages => [
                         ...prevMessages.slice(0, -1),
                         { 
@@ -200,7 +200,7 @@ function ChatComponent({
                             id: messageId, 
                             files: [], 
                             images: [],
-                            image: botImage,
+                            bot_image: botImage,
                             sender: 'bot',
                             orch_config_id: pluginKeys!.orch_config_id, 
                             orch_config_key: pluginKeys!.orch_config_key
@@ -227,7 +227,7 @@ function ChatComponent({
                     id: messageId, 
                     files: [], 
                     images: [], 
-                    image: [],
+                    bot_image: [],
                     sender: 'bot',
                     orch_config_id: pluginKeys!.orch_config_id, 
                     orch_config_key: pluginKeys!.orch_config_key
@@ -880,13 +880,13 @@ function ChatComponent({
                                     )}
 
                                     {/* Display bot-sent images in chat area*/}
-                                    {message.image && message.image.length > 0 && (
+                                    {message.bot_image && message.bot_image.length > 0 && (
                                         <div className="w-56 h-auto">
-                                            {message.image.map((image, i: number) => (
+                                            {message.bot_image.map((bot_image, i: number) => (
                                                 <div key={i} className="flex flex-col items-start bg-neutral-100 dark:bg-neutral-800 p-2 m-4">
                                                     <img
-                                                        src={image}
-                                                        alt={`Bot Generated Image ${i}`}
+                                                        src={bot_image}
+                                                        alt={`AI generated image ${i}`}
                                                         className="rounded-md border border-gray-300 dark:border-gray-700"
                                                     />
                                                     <span className="text-xs text-gray-500 mb-1">AI generated image</span>
