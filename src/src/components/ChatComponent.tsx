@@ -463,7 +463,9 @@ function ChatComponent({
 
     // Envio da mensagem
     const handleSend = async () => {
-        if (!inputText.trim()) return;
+        const hasText = (inputText.trim()).length > 0;
+        const hasAttachments = uploadedFiles.length > 0 || uploadedImages.length > 0;
+        if (!hasText && !hasAttachments) return;
         const messageId = new Date().getTime().toString();
         const formData = new FormData();
         formData.append("user_input", inputText || "");
