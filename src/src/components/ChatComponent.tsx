@@ -22,7 +22,8 @@ interface Message {
     language: string;
     id: string;
     files?: File[];
-    images?: string[];
+    images: string[]; // user-uploaded images
+    image?: string[]; // backend-generated images
     sender: 'user' | 'bot' | 'debug' | 'websocket';
     agent?: string;
     orch_config_id: string|undefined;
@@ -130,105 +131,6 @@ function ChatComponent({
         }
     };
 
-    const exampleTemplate: Template = {
-        title: "Intent Configuration Form",
-        fields: [
-          {
-            label: "Bot Name",
-            type: "text",
-            name: "botName",
-            placeholder: "Enter bot name"
-          },
-          {
-            label: "Bot Description",
-            type: "textarea",
-            name: "botDescription",
-            placeholder: "Describe the bot's purpose"
-          },
-          {
-            label: "Primary Intent",
-            type: "select",
-            name: "primaryIntent",
-            options: [
-              { label: "Greeting", value: "greeting" },
-              { label: "Goodbye", value: "goodbye" },
-              { label: "FAQ", value: "faq" }
-            ]
-          },
-          {
-            label: "Related Intents",
-            type: "multiselect",
-            name: "relatedIntents",
-            options: [
-              { label: "Order Status", value: "order_status" },
-              { label: "Cancel Order", value: "cancel_order" },
-              { label: "Shipping Info", value: "shipping_info" },
-              { label: "Returns", value: "returns" }
-            ]
-          },
-          // Nested group of subfields example:
-          {
-            title: "Response Settings",
-            fields: [
-              {
-                label: "Response Type",
-                type: "select",
-                name: "responseType",
-                options: [
-                  { label: "Text", value: "text" },
-                  { label: "Audio", value: "audio" },
-                  { label: "Video", value: "video" }
-                ]
-              },
-              {
-                label: "Response Text",
-                type: "textarea",
-                name: "responseText",
-                placeholder: "Enter the default response"
-              },
-              {
-                label: "Enable Fallback",
-                type: "select",
-                name: "enableFallback",
-                options: [
-                  { label: "Yes", value: "yes" },
-                  { label: "No", value: "no" }
-                ]
-              },
-              {
-                label: "Fallback Responses",
-                type: "multiselect",
-                name: "fallbackResponses",
-                options: [
-                  { label: "Sorry, can you repeat?", value: "repeat" },
-                  { label: "I didn't get that", value: "not_understood" },
-                  { label: "Please rephrase", value: "rephrase" }
-                ]
-              }
-            ]
-          },
-          // Another nested group for advanced options:
-          {
-            title: "Advanced Options",
-            fields: [
-              {
-                label: "Confidence Threshold",
-                type: "text",
-                name: "confidenceThreshold",
-                placeholder: "e.g. 0.7"
-              },
-              {
-                label: "Max Retry Attempts",
-                type: "text",
-                name: "maxRetries",
-                placeholder: "e.g. 3"
-              }
-            ]
-          }
-        ]
-      };
-      
-
     useEffect(() => {
         console.log("Setting answer:", exampleAnswer);
         setAnswer(exampleAnswer);
@@ -285,9 +187,11 @@ function ChatComponent({
                 setIsLoading(false);
                 setInputEnable(false);
                 if (index < apiResponse.length) {
-                    // Without typping effect: substitute bellow currentMessage = apiResponse
-                    currentMessage = apiResponse;
+                    // WITHOUT TYPING EFFECT: substitute bellow currentMessage = apiResponse
                     // currentMessage += apiResponse[index];
+                    currentMessage = apiResponse;
+                    // Check if image URL exists
+                    const botImage = response.data.image ? [response.data.image] : [];
                     setMessages(prevMessages => [
                         ...prevMessages.slice(0, -1),
                         { 
@@ -295,13 +199,14 @@ function ChatComponent({
                             language: selectedLanguage, 
                             id: messageId, 
                             files: [], 
-                            images: [], 
+                            images: [],
+                            image: botImage,
                             sender: 'bot',
                             orch_config_id: pluginKeys!.orch_config_id, 
                             orch_config_key: pluginKeys!.orch_config_key
                         },
                     ]);
-                    // Without typing effect: comment index and timeout bellow and uncomment setInputEnable
+                    // WITHOUT TYPING EFFECT: comment index and timeout bellow and uncomment setInputEnable
                     // index++;
                     // setTimeout(typingEffect, 0);
                     setInputEnable(true);
@@ -322,6 +227,7 @@ function ChatComponent({
                     id: messageId, 
                     files: [], 
                     images: [], 
+                    image: [],
                     sender: 'bot',
                     orch_config_id: pluginKeys!.orch_config_id, 
                     orch_config_key: pluginKeys!.orch_config_key
@@ -841,6 +747,12 @@ function ChatComponent({
         }
     }, [inputText]); // Runs every time inputText changes (including speech-to-text updates)
 
+    useEffect(() => {
+        if (inputEnable) {
+            textAreaRef.current?.focus();
+        }
+    }, [inputEnable]);
+
     return (
         <div className="flex flex-col md:flex-row w-full h-full"> {/* Main flex container */}
             {/* Main UI */}
@@ -902,7 +814,7 @@ function ChatComponent({
                                 <div
                                     className={`relative inline-block pr-4 pl-4 pb-2 rounded-3xl ${
                                         message.sender === "user"
-                                            ? "bg-[var(--client-color)] dark:bg-[var(--client-color-dark)] text-white pt-4 text-xs md:text-sm"
+                                            ? "bg-[var(--client-color)] dark:bg-[var(--client-color-dark)] text-white pt-3 text-xs md:text-sm"
                                             : message.sender === "debug"
                                             ? "bg-yellow-200 dark:bg-yellow-800 text-black dark:text-white pt-10 text-xs md:text-sm"
                                             : "bg-neutral-200 text-black dark:bg-neutral-900 dark:text-white pt-10 text-xs md:text-sm"
@@ -967,7 +879,23 @@ function ChatComponent({
                                             </div>
                                     )}
 
-                                    {/* Display sent images in chat area */}
+                                    {/* Display bot-sent images in chat area*/}
+                                    {message.image && message.image.length > 0 && (
+                                        <div className="w-56 h-auto">
+                                            {message.image.map((image, i: number) => (
+                                                <div key={i} className="flex flex-col items-start bg-neutral-100 dark:bg-neutral-800 p-2 m-4">
+                                                    <img
+                                                        src={image}
+                                                        alt={`Bot Generated Image ${i}`}
+                                                        className="rounded-md border border-gray-300 dark:border-gray-700"
+                                                    />
+                                                    <span className="text-xs text-gray-500 mb-1">AI generated image</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* Display user-sent images in chat area */}
                                     {message.images && message.images.length > 0 && (
                                         <div className="w-56 h-auto">
                                             {message.images.map((image, i: number) => (
@@ -981,12 +909,12 @@ function ChatComponent({
                                         </div>
                                     )}
 
-                                    {/* Display sent files in chat area */}
+                                    {/* Display user-sent files in chat area */}
                                     {message.files && message.files.length > 0 && (
                                         <div className="w-64 h-auto">
                                             {message.files.map((file: { name: string; size: number }, i: number) => (
                                                 <div key={i} className="flex flex-row items-center bg-white dark:bg-neutral-800 p-2 m-4 rounded-md">
-                                                    <FaFileAlt className="text-4xl text-neutral-600 dark:text-white flex-shrink-0" />
+                                                    <FaFileAlt className="text-3xl mr-2 text-neutral-600 dark:text-white flex-shrink-0" />
                                                     <div className="flex flex-col w-full text-left overflow-hidden">
                                                         <span className="text-sm text-black dark:text-white truncate w-full">{file.name}</span>
                                                         <span className="text-xs font-sans text-neutral-800 dark:text-neutral-300">{file.size} bytes</span>
