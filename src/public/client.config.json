@@ -17,7 +17,7 @@
     "inputEnable": true,
     "preferedLanguage": "pt-PT",
     "enableFeatures": {
-        "enableNewChat": false,
+        "enableNewChat": true,
         "enableDarkMode": true,
         "enableDebugMode": false,
         "enableAudio": true,

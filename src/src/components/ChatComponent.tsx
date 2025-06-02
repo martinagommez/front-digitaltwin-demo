@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { FaFileAlt } from "react-icons/fa";
-import { FiChevronDown, FiChevronUp } from "react-icons/fi";
+import { useDebounce } from 'use-debounce';
+import * as sdk from "microsoft-cognitiveservices-speech-sdk";
+import { FaFileAlt, FaPause, FaPlay } from "react-icons/fa";
+import { FiImage, FiFile, FiX, FiSend, FiSlash, FiChevronDown, FiChevronUp, FiCheck, FiCopy, FiSidebar } from "react-icons/fi";
+import { AiOutlineLike, AiOutlineDislike, AiFillLike, AiFillDislike } from "react-icons/ai";
 import Modal from 'react-modal';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
@@ -8,7 +11,10 @@ import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
 
 import { useLanguageContext } from './LanguageContext';
+import AudioProcessing from './AudioProcessing';
+import AnalysisComponent from './AnalysisComponent';
 import './styles.css';
+import { ChatAppResponse } from '../api/models';
 import { PluginMeta, PluginKeys } from '../models/requests/PluginApi';
 
 interface Message {
@@ -40,19 +46,39 @@ interface ChatComponentProps {
     setPluginKeys: React.Dispatch<React.SetStateAction<PluginKeys | null>>;
     selectedLanguage: string;
     darkMode: boolean;
+    autoAudioPlay: boolean;
 }
+
+type FormField = {
+    label: string;
+    type: string; // 'text', 'textarea', 'select', 'multiselect', etc.
+    name: string;
+    placeholder?: string;
+    latest_value?: string;
+    options?: { label: string; value: string }[]; 
+};
+
+type Template = {
+    title?: string;
+    fields?: (FormField | { title: string; fields: FormField[] })[]; // handle single fields and grouped fields
+};
 
 function ChatComponent({ 
     inputEnable, setInputEnable, 
-    debugMode, 
-    isChatSidebarOpen, 
-    activedPlugin,
+    debugMode, setDebugMode, 
+    isChatSidebarOpen, setIsChatSidebarOpen, 
+    activedPlugin, setActivedPlugin,
     pluginKeys,
     selectedLanguage, 
-
+    darkMode, 
+    autoAudioPlay 
 }: ChatComponentProps) {
     const [inputText, setInputText] = useState<string>('');
+    const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+    const [messageFeedback, setMessageFeedback] = useState<{ [id: string]: "like" | "dislike" | null }>({});
+	const [feedbackApi, setFeedbackApi] = useState<string>('');
     const [messages, setMessages] = useState<Message[]>([]);
+    const [playingMessageId, setPlayingMessageId] = useState<string | null>(null);
     const [isUserAtBottom, setIsUserAtBottom] = useState<boolean>(true);
     const [showWebSockets, setShowWebSockets] = useState<boolean>(true);
     const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -64,12 +90,54 @@ function ChatComponent({
     const [uploadedImages, setUploadedImages] = useState<File[]>([]);
     const [imagePreviews, setImagePreviews] = useState<string[]>([]);
     const [isConfigLoaded, setIsConfigLoaded] = useState<boolean>(false);
+    const [answer, setAnswer] = useState<ChatAppResponse | null>(null);
+    const [formTemplate, setFormTemplate] = useState<Template | null>(null);
+    const [formValues, setFormValues] = useState<Record<string, string | string[]>>({});
+    const [formError, setFormError] = useState<boolean>(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const imageInputRef = useRef<HTMLInputElement>(null);
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
     const chatContainerRef = useRef<HTMLDivElement>(null);
     const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+    const currentPlayingMessageIdRef = useRef<string | null>(null);
+    const lastPlayedMessageRef = useRef<string | null>(null);
+    const isPlayingRef = useRef<boolean>(false);
     
+    const exampleAnswer: ChatAppResponse = {
+        context: {
+            thoughts: [
+                { title: "Data Extractor", description: "Pulled latest quarterly data from investor presentation and financial report.", props: {deployment: "chat-4o-mini", model:"gpt-4o-mini"} },
+                { title: "Summary Agent", description: "Identified top 5 KPIs to highlight in the response based on financial impact and relevance.", props: {deployment: "chat-4o-mini", model:"gpt-4o-mini"} },
+                { title: "Risk Analyst", description: "Detected potential concerns in regulatory changes and debt levels; suggested flagging them subtly." },
+                { title: "Clarity Optimizer", description: "Rephrased financial jargon to make it accessible to non-expert users while preserving accuracy." },
+                { title: "Narrative Builder", description: "Assembled a coherent summary starting with financial highlights, followed by ESG and innovation efforts." },
+                { title: "Validation Agent", description: "Cross-checked figures against the original PDF to ensure consistency." },
+                { title: "Tone Manager", description: "Ensured the message maintains a professional and neutral tone appropriate for executive reporting." },
+                { title: "Final Compiler", description: "Compiled the final message for delivery, ready for rendering in chat interface." }
+            ],
+            support: [
+                "https://www.edp.com/sites/default/files/2024-05/EDP%20-%201Q24%20Results%20Presentation.pdf",
+                "Content 1: The company finalized the acquisition of a 400MW solar portfolio in the U.S. Electricity distributed increased by 2.3%, mostly due to higher demand in Brazil.Digitalization initiatives reduced OPEX by 5% compared to the previous quarter. Stakeholder engagement efforts increased, with over 20 ESG-focused investor meetings in Q1. The number of customers with green energy contracts grew by 12% quarter over quarter.Regulatory changes in Iberia could impact hydroelectric margins in Q2.",
+                "Content 2: Electricity distributed increased by 2.3%, mostly due to higher demand in Brazil.",
+                "Content 3: Digitalization initiatives reduced OPEX by 5% compared to the previous quarter.",
+                "Content 4: Stakeholder engagement efforts increased, with over 20 ESG-focused investor meetings in Q1. The number of customers with green energy contracts grew by 12% quarter over quarter.",
+                "Content 5: The number of customers with green energy contracts grew by 12% quarter over quarter. Regulatory changes in Iberia could impact hydroelectric margins in Q2. Hybrid bond issuance in March secured €750 million at favorable terms. The first offshore wind turbine was successfully installed at the Moray West project. Employee satisfaction scores rose by 7% following remote work policy updates. The solar self-consumption segment grew by 19%, especially in southern markets."
+            ],
+            citations: [
+                "https://www.edp.com/sites/default/files/2024-05/Relat%C3%B3rio%20Intercalar%201%C2%BATrimestre%202024.pdf", 
+                "https://www.edp.com/sites/default/files/2024-05/EDP%20-%201Q24%20Results%20Presentation.pdf"
+            ]
+        }
+    };
+
+    useEffect(() => {
+        console.log("Setting answer:", exampleAnswer);
+        setAnswer(exampleAnswer);
+    }, []); // Runs only once when component mounts setAnswer(exampleAnswer);
+
     // Get data from context
-    const { languageData } = useLanguageContext();
+    const { speechKey, speechRegion, voices, languageData } = useLanguageContext();
 
     // Formatação TimeStamp
     function getFormattedTimestamp() {
@@ -106,6 +174,7 @@ function ChatComponent({
             const apiResponse = response.data.response;
             setSessionId(response.data.session_id);
             setToken(response.data.token);
+            setFormTemplate(response.data.template_fields);
             // setFormTemplate(exampleTemplate);
             setIsConfigLoaded(true);
             console.log("Form Template set from backend:", response.data.template_fields);
@@ -191,6 +260,113 @@ function ChatComponent({
         }
     };
 
+    useEffect(() => {
+        console.log("Form Template set (effect):", formTemplate);
+        console.log("Is Config Loaded (effect):", isConfigLoaded);
+    }, [formTemplate, isConfigLoaded]);
+
+    useEffect(() => {
+        if (!formTemplate || !formTemplate.fields) return;
+        // Flatten any nested field groups (if your template structure supports groups)
+        const allFields = formTemplate.fields.flatMap(field =>
+            'fields' in field ? field.fields : [field]
+        );
+        // Build initial values from latest_value
+        const initialValues: Record<string, string | string[]> = {};
+        allFields.forEach((field) => {
+            if (field.latest_value !== undefined) {
+                if (field.type === 'multiselect') {
+                    // Ensure multiselect values are stored as arrays
+                    initialValues[field.name] = Array.isArray(field.latest_value)
+                        ? field.latest_value
+                        : String(field.latest_value).split(',').map(val => val.trim());
+                } else {
+                    initialValues[field.name] = String(field.latest_value);
+                }
+            }
+        });
+
+        // Update formValues
+        setFormValues(initialValues);
+    }, [formTemplate]);
+
+    const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        setFormValues(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleFormSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!formTemplate || !formTemplate.fields) {
+            console.error("Form template or its fields are undefined");
+            return;
+        }
+        const allFields = formTemplate.fields.flatMap(field =>
+            'fields' in field ? field.fields : [field]
+        );
+        // Build name-to-label mapping
+        const fieldLabels = Object.fromEntries(
+            allFields.map(f => [f.name, f.label || f.name])
+        );
+        const fieldOptions = Object.fromEntries(
+            allFields.map(f => [f.name, f.options || []])
+        );
+        // Check for missing required fields
+        const missingFields = allFields.filter(f => {
+            const value = formValues[f.name];
+            if (Array.isArray(value)) {
+                return value.length === 0; // multiselect: no option selected
+            }
+            return !value?.trim(); // string: empty or whitespace only
+        });
+        if (missingFields.length > 0) {
+            setFormError(true);
+            return;
+        }
+        setFormError(false);
+        console.log("Submitted form data:", formValues);
+        // Push it into the messages state as a user message
+        setMessages(prevMessages => [
+            ...prevMessages,
+            {
+                text: "",
+                sender: 'user',
+                id: new Date().getTime().toString(),
+                language: selectedLanguage,
+                files: [],
+                images: [],
+                orch_config_id: pluginKeys!.orch_config_id,
+                orch_config_key: pluginKeys!.orch_config_key,
+                formFields: formValues,
+                formFieldLabels: fieldLabels,
+                formFieldOptions: fieldOptions
+            }
+        ]);
+        // Reset the form
+        setFormTemplate(null);
+        setIsConfigLoaded(false);
+        setFormValues({});
+        const messageId = new Date().getTime().toString();
+        const formData = new FormData();
+        // Add keys expected by fetchMessage
+        formData.append("user_input", inputText || "");
+        formData.append("timestamp", getFormattedTimestamp());
+        formData.append("messageId", messageId);
+        formData.append("session_id", sessionId);
+        formData.append("token", token);
+        formData.append("language", selectedLanguage);
+        formData.append("body", "")
+        formData.append("orch_config_id", pluginKeys!.orch_config_id);
+        formData.append("orch_config_key", pluginKeys!.orch_config_key);
+        // Create structured array of { name, answer } and send as one field
+        const formattedTemplateFields = Object.entries(formValues).map(([name, answer]) => ({
+            [name]:answer
+        }));
+        formData.append("template_fields", JSON.stringify(formattedTemplateFields));
+        await fetchMessage(formData);
+        console.log("Handle Form Send", formData);
+    };
+
     // Envio da mensagem
     const handleSend = async () => {
         const hasText = (inputText.trim()).length > 0;
@@ -239,6 +415,224 @@ function ChatComponent({
         console.log("Handle Message Send", formData);
     };
 
+    const copyToClipboard = async (messageText: string, messageId: string) => {
+        try {
+            await navigator.clipboard.writeText(messageText);
+            setCopiedMessageId(messageId);
+            setTimeout(() => setCopiedMessageId(null), 1500);  // Reset after 1.5s
+        } catch (error) {
+            console.error("Failed to copy:", error);
+        }
+    };
+
+    const sendFeedbackToBackend = async (messageId: string, feedback: "like" | "dislike" | null) => {
+        try {
+            await fetch(feedbackApi, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ messageId, feedback }),
+            });
+        } catch (error) {
+            console.error("Error sending feedback:", error);
+        }
+    };
+
+    const handleFeedback = (messageId: string, type: "like" | "dislike") => {
+        setMessageFeedback(prev => {
+            const current = prev[messageId];
+            let updatedType: "like" | "dislike" | null;
+            if (current === type) {
+                updatedType = null; // Deselect if already selected
+            } else {
+                updatedType = type; // Set the new type
+            }
+            // Send to backend
+            sendFeedbackToBackend(messageId, updatedType);
+            return { ...prev, [messageId]: updatedType };
+        });
+    };
+
+    const handleAnalysis = async () => {
+        setIsChatSidebarOpen(true);
+    };
+
+    const closeSidebar = () => {
+        setIsChatSidebarOpen(false);
+    };
+
+    const [debouncedMessages] = useDebounce(messages, 500);
+    useEffect(() => {
+        if (!autoAudioPlay) return;
+        if (debouncedMessages.length === 0) return;
+        const lastMessage = debouncedMessages[debouncedMessages.length - 1];
+        // Ensure the bot message is new & no duplicate playback
+        if (
+            lastMessage.sender === "bot" &&
+            lastMessage.text.trim() !== "" &&
+            lastPlayedMessageRef.current !== lastMessage.id &&
+            !isPlayingRef.current
+        ) {
+            lastPlayedMessageRef.current = lastMessage.id;
+            isPlayingRef.current = true;
+            playChatbotResponse(lastMessage.text, lastMessage.id).finally(() => {
+                isPlayingRef.current = false;
+            });
+        }
+    }, [debouncedMessages, autoAudioPlay]);
+
+    // Function to get the correct Azure voice for the selected language
+    const getAzureVoice = (language: string) => {
+        console.log( "🗣️ getAzureVoice", language)
+        return voices[language] || "en-US-JennyNeural"; // Default to English if not found
+    };
+
+    // Synthesizes text to audio using Azure Speech Services. Returns a Promise that resolves with a blob URL of the audio.
+    const synthesizeTextToAudio = (text: string): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            try {
+                // Create speech configuration with your subscription key and region.
+                const speechConfig = sdk.SpeechConfig.fromSubscription(speechKey, speechRegion);
+                speechConfig.speechSynthesisVoiceName = getAzureVoice(selectedLanguage);
+                // Instead of playing directly, we use a push stream to capture audio data.
+                const pushStream = sdk.AudioOutputStream.createPullStream();
+                const audioConfig = sdk.AudioConfig.fromStreamOutput(pushStream);
+                const synthesizer = new sdk.SpeechSynthesizer(speechConfig, audioConfig);
+                synthesizer.speakTextAsync(
+                    text,
+                    (result) => {
+                        if (result.reason === sdk.ResultReason.SynthesizingAudioCompleted) {
+                            // result.audioData is a Uint8Array containing the WAV audio.
+                            const audioData = result.audioData;
+                            // Create a Blob from the audio data.
+                            const blob = new Blob([audioData], { type: "audio/wav" });
+                            const audioUrl = URL.createObjectURL(blob);
+                            synthesizer.close();
+                            resolve(audioUrl);
+                        } else {
+                            synthesizer.close();
+                            reject(new Error(result.errorDetails || "Synthesis error"));
+                        }
+                    },
+                    (error) => {
+                        synthesizer.close();
+                        reject(error);
+                    }
+                );
+            } catch (error) {
+                reject(error);
+            }
+        });
+    };
+
+    // Play Chatbot Response
+    // Using Azure Speech Services that enables text-to-speech
+    // Implementations: Play changes the button to pause. Clicking pause stops playback. Clicking a new message stops any current audio. When audio ends, button resets.
+    const playChatbotResponse = async (chatbotResponse: string, messageId: string) => {
+        if (!chatbotResponse || !speechKey || !speechRegion) return;
+        // If this message is already playing, then pause/stop it.
+        if (currentPlayingMessageIdRef.current === messageId) {
+            if (audioRef.current) {
+                audioRef.current.pause();
+                audioRef.current.currentTime = 0; // reset playback
+                console.log("🛑 Stoping audio.")
+            }
+            currentPlayingMessageIdRef.current = null;
+            setPlayingMessageId(null);
+            return;
+        }
+        // If another message is playing, stop it immediately.
+        if (currentPlayingMessageIdRef.current && audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current.currentTime = 0;
+            currentPlayingMessageIdRef.current = null;
+            setPlayingMessageId(null);
+            console.log("🛑 Stoping message to change audios.")
+            console.log("🔄 Switching")
+        }
+        // Mark this message as currently playing.
+        currentPlayingMessageIdRef.current = messageId;
+        setPlayingMessageId(messageId);
+        console.log("🔊 Audio playing.")
+        try {
+            // Get the audio URL from Azure Speech Services.
+            const audioUrl = await synthesizeTextToAudio(chatbotResponse);
+            const audio = new Audio(audioUrl);
+            audioRef.current = audio;
+            // When audio ends, reset the playing state.
+            audio.onended = () => {
+                currentPlayingMessageIdRef.current = null;
+                setPlayingMessageId(null);
+                console.log("✅ Audio ended.")
+            };
+            // Start playback.
+            await audio.play().catch((err) => {
+                console.log("❌ Audio play error:", err);
+                currentPlayingMessageIdRef.current = null;
+                setPlayingMessageId(null);
+            });
+        } catch (error) {
+            console.log("❌ Error synthesizing audio;", error) 
+            currentPlayingMessageIdRef.current = null;
+            setPlayingMessageId(null);
+        }
+    };
+
+    //Seleção de ficheiros
+    const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const files = event.target.files;
+        if (files) {
+            const fileArray = Array.from(files).filter(
+                (file) => file.type !== "image/jpeg" && file.type !== "image/png"
+            );
+            setUploadedFiles((prevFiles) => [...prevFiles, ...fileArray]);
+        }
+    };
+
+    //Seleção de imagens
+    const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const files = event.target.files;
+        if (files) {
+            const previews: string[] = [];
+            const imageArray = Array.from(files).filter(
+                (file) => file.type === "image/jpeg" || file.type === "image/png"
+            );
+            setUploadedImages((prevImages) => [...prevImages, ...imageArray]);
+            // Generate unique previews
+            imageArray.forEach((file) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    if (reader.result) {
+                        previews.push(reader.result as string);
+                        setImagePreviews((prevPreviews) => {
+                            //Deduplication
+                            const uniquePreviews = [...prevPreviews, ...previews].filter(
+                                (preview, index, self) => self.indexOf(preview) === index
+                            );
+                            return uniquePreviews;
+                        });
+                    }
+                };
+                reader.readAsDataURL(file);
+            });            
+        }
+    };
+
+    //Remover ficheiros selecionados antes do envio
+    const removeFile = (index: number) => {
+        setUploadedFiles((prevFiles) =>
+            prevFiles.filter((_, i) => i !== index)
+        );
+    };
+
+    //Remover imagens selecionadas antes do envio
+    const removeImage = (index: number) => {
+        setUploadedImages((prevImages) => prevImages.filter((_, i) => i !== index));
+        setImagePreviews((prevPreviews) => prevPreviews.filter((_, i) => i !== index));
+    };
+
+    const triggerFileInput = () => fileInputRef.current?.click();
+    const triggerImageInput = () => imageInputRef.current?.click();
+
     // Extract text values from JSON
     const expiredText = languageData?.expiredText?.[selectedLanguage] || languageData?.expiredText?.['en-US'];
     const expiredSubText = languageData?.expiredSubText?.[selectedLanguage] || languageData?.expiredSubText?.['en-US'];
@@ -246,6 +640,14 @@ function ChatComponent({
     const endedSubText = languageData?.endedSubText?.[selectedLanguage] || languageData?.endedSubText?.['en-US'];
     const updateButton = languageData?.updateButton?.[selectedLanguage] || languageData?.updateButton?.['en-US'];
     const chatPlaceholder = languageData?.chatPlaceholder?.[selectedLanguage] || languageData?.chatPlaceholder?.['en-US'];
+    const uploadFilesButton = languageData?.uploadFilesButton?.[selectedLanguage] || languageData?.uploadFilesButton?.['en-US'];
+    const uploadImagesButton = languageData?.uploadImagesButton?.[selectedLanguage] || languageData?.uploadImagesButton?.['en-US'];
+    const audioPlayButton = languageData?.audioPlayButton?.[selectedLanguage] || languageData?.audioPlayButton?.['en-US'];
+    const audioPauseButton = languageData?.audioPauseButton?.[selectedLanguage] || languageData?.audioPauseButton?.['en-US'];
+    const analysisTitle = languageData?.analysisTitle?.[selectedLanguage] || languageData?.analysisTitle?.['en-US'];    
+    const loadingForm = languageData?.loadingForm?.[selectedLanguage] || languageData?.loadingForm?.['en-US'];
+    const submitForm = languageData?.submitForm?.[selectedLanguage] || languageData?.submitForm?.['en-US'];
+    const submitFormError = languageData?.submitFormError?.[selectedLanguage] || languageData?.submitFormError?.['en-US'];
 
     //  Valores defualt para as features configuráveis pelo json
 	const [featuresStates, setFeaturesStates] = useState({
@@ -285,6 +687,7 @@ function ChatComponent({
 
 					});
 				}
+                setFeedbackApi(data.feedbackApi || '');
                 console.log('Language Data:', data);
 			} catch (error) {
 				console.error('Error fetching button states:', error);
@@ -644,7 +1047,7 @@ function ChatComponent({
                         )}
 
                         {/* Input Area */}
-                        {isConfigLoaded && (
+                        {isConfigLoaded && (!formTemplate?.fields || formTemplate.fields?.length === 0) && (
                             <div className="relative w-full flex">
                                 {inputEnable ? (
                                 // When inputEnable is true
@@ -660,6 +1063,48 @@ function ChatComponent({
                                             [&::-webkit-scrollbar-thumb]:hover:bg-neutral-500
                                             dark:[&::-webkit-scrollbar-thumb]:hover:bg-neutral-900"
                                         >
+                                            {/* Selected files */}
+                                            {uploadedFiles.map((file, index) => (
+                                                <div
+                                                    key={index}
+                                                    className="relative flex items-center justify-between h-24 w-56 md:h-28 md:w-60 p-2 mb-2"
+                                                >
+                                                    <div className="flex flex-row items-center gap-2 h-full w-full p-2 rounded-xl text-white bg-white dark:bg-neutral-800">
+                                                        <FaFileAlt className="text-4xl md:text-5xl text-neutral-600 dark:text-white flex-shrink-0" />
+                                                        <div className="flex flex-col w-full text-left overflow-hidden">
+                                                            <span className="text-sm font-bold text-black dark:text-white truncate w-full">{file.name}</span>
+                                                            <span className="text-xs text-neutral-800 dark:text-neutral-300">{file.size} bytes</span>
+                                                        </div>
+                                                    </div>
+                                                    {/* Remove File button */}
+                                                    <button
+                                                        onClick={() => removeFile(index)}
+                                                        className="absolute top-0 right-0 text-xl text-red-900 hover:text-red-950 bg-red-200 dark:bg-white rounded-full border-4 border-neutral-100 dark:border-neutral-700 mt-0 mr-0"
+                                                    >
+                                                        <FiX />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                            {/* Selected images */}
+                                            {imagePreviews.map((image, index) => (
+                                                <div
+                                                    key={index}
+                                                    className="relative flex items-center justify-between h-24 w-24 md:h-28 md:w-28 p-2 mb-2 flex-shrink-0"
+                                                >
+                                                    <img
+                                                        src={image}
+                                                        alt={`Uploaded ${index}`}
+                                                        className="h-full w-full object-cover rounded-xl flex-shrink-0"
+                                                    />
+                                                    {/* Remove Image button */}
+                                                    <button
+                                                        onClick={() => removeImage(index)}
+                                                        className="absolute top-0 right-0 text-xl text-red-900 hover:text-red-950 bg-red-200 dark:bg-white rounded-full border-4 border-neutral-100 dark:border-neutral-700 mt-0 mr-0"
+                                                    >
+                                                        <FiX />
+                                                    </button>
+                                                </div>
+                                            ))}
                                         </div>
                                         {/* Text area */}
                                         <textarea
@@ -686,6 +1131,55 @@ function ChatComponent({
                                             }}
                                             rows={1}
                                         />
+                                        <div className="flex flex-row items-center justify-between p-1">
+                                            <div className="m-0">
+                                                {/* File input and button */}
+                                                <input type='file'
+                                                    ref={fileInputRef}
+                                                    onChange={handleFileSelect}
+                                                    multiple
+                                                    className='hidden'
+                                                    accept='.pdf,.doc,.docx' />
+                                                {featuresStates.enableFiles && (
+                                                    <button 
+                                                        title={uploadFilesButton}
+                                                        className={`rounded-full w-8 h-8 text-black dark:text-white hover:bg-neutral-300 dark:hover:bg-neutral-500`}
+                                                        onClick={triggerFileInput}>
+                                                        <FiFile className='w-8 h-5' />
+                                                    </button>
+                                                )}
+                                                {/* Image input and button */}
+                                                <input type='file'
+                                                    ref={imageInputRef}
+                                                    onChange={handleImageSelect}
+                                                    multiple
+                                                    className='hidden'
+                                                    accept='.jpg,.jpeg,.png' />
+                                                {featuresStates.enableImages && (
+                                                    <button
+                                                        title={uploadImagesButton}
+                                                        className='rounded-full w-8 h-8 text-black dark:text-white hover:bg-neutral-300 dark:hover:bg-neutral-500'
+                                                        onClick={triggerImageInput}>
+                                                        <FiImage className='w-8 h-5 text-2xl' />
+                                                    </button>
+                                                )}
+                                            </div>
+                                            <div className='flex felx-row gap-2 mb-1 mr-0'>
+                                                {/* Audio Processing Component */}
+                                                <AudioProcessing
+                                                    inputText={inputText} setInputText={setInputText}
+                                                    setPlayingMessageId={setPlayingMessageId}
+                                                    darkMode={darkMode}
+                                                    selectedLanguage={selectedLanguage}
+                                                />
+                                                {/* Send button */}
+                                                <button 
+                                                    className="rounded-full w-7 h-7 md:w-8 md:h-8 bg-black dark:bg-white text-white dark:text-black hover:bg-neutral-700 dark:hover:bg-neutral-300"
+                                                    onClick={handleSend}>
+                                                    <FiSend className='w-6 h-4 md:w-7 md:h-5 rotate-45 m-0 rounded-full'/>
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
                                 ) : (
                                     // When inputEnable is false
@@ -698,8 +1192,256 @@ function ChatComponent({
                                             value={""}
                                             disabled
                                         />
+                                        <div className="flex flex-row items-center justify-between mt-[6px] p-1">
+                                            <div className="m-0">
+                                                {/* File button */}
+                                                {featuresStates.enableFiles && (
+                                                    <button 
+                                                        className={`rounded-full w-8 h-8 text-black dark:text-white
+                                                            ${!inputEnable ? 'cursor-not-allowed' : ''}
+                                                        `}
+                                                        onClick={inputEnable ? triggerFileInput : undefined}
+                                                        disabled={!inputEnable}
+                                                    >
+                                                        <FiFile className='w-8 h-5 text-2xl' />
+                                                    </button>
+                                                )}
+                                                {/* Image button */}
+                                                {featuresStates.enableImages && (
+                                                    <button 
+                                                        className={`rounded-full w-8 h-8 text-black dark:text-white
+                                                            ${!inputEnable ? 'cursor-not-allowed' : ''}
+                                                        `}
+                                                        onClick={inputEnable ? triggerFileInput : undefined}
+                                                        disabled={!inputEnable}
+                                                    >
+                                                        <FiImage className='w-8 h-5 text-2xl' />
+                                                    </button>
+                                                )}
+                                            </div>
+                                            <div>
+                                                {/* Send button */}
+                                                <button 
+                                                    className={`rounded-full w-7 h-7 md:w-8 md:h-8 mr-0 bg-black dark:bg-white text-white dark:text-black hover:bg-neutral-700 dark:hover:bg-neutral-300 
+                                                        ${!inputEnable ? 'cursor-not-allowed' : ''}
+                                                    `}
+                                                    onClick={inputEnable ? triggerFileInput : undefined}
+                                                    disabled={!inputEnable}
+                                                >
+                                                    <FiSlash className='flex items-center justify-center w-5 md:w-6 mx-auto text-lg'/>
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
+                            </div>
+                        )}
+
+                        {/* Template Form Area */}
+                        {formTemplate?.fields && formTemplate.fields.length > 0 && inputEnable && (
+                            <div className="relative w-full flex">
+                                <div className="relative w-full h-auto text-sm md:text-base p-2 resize-none overflow-auto bg-neutral-100 dark:bg-neutral-700 dark:text-white">
+                                    <div className="w-full max-h-80 text-sm md:text-base bg-transparent border-none focus:outline-none focus:border-none resize-none overflow-auto p-2
+                                                scroll-smooth
+                                                [&::-webkit-scrollbar]:w-2
+                                                [&::-webkit-scrollbar-track]:rounded-full
+                                                [&::-webkit-scrollbar-track]:bg-[#d0d0d0]/20
+                                                dark:[&::-webkit-scrollbar-track]:bg-[#414141]/20
+                                                [&::-webkit-scrollbar-thumb]:rounded-full
+                                                [&::-webkit-scrollbar-thumb]:bg-[#d0d0d0]
+                                                dark:[&::-webkit-scrollbar-thumb]:bg-[#414141]
+                                                [&::-webkit-scrollbar-thumb]:hover:bg-[#acabab]
+                                                dark:[&::-webkit-scrollbar-thumb]:hover:bg-[#2a2a2a]">
+                                        <form className="space-y-4 p-4 bg-transparent max-w-4xl mx-auto">
+                                            <h2 className="text-lg font-bold mb-4">{formTemplate.title}</h2>
+                                            {/* MAIN FIELDS AND NESTED GROUPS */}
+                                            <div className="grid grid-cols-2 gap-4">
+                                                {formTemplate?.fields?.map((field, index) =>
+                                                    'fields' in field ? (
+                                                        // NESTED GROUP: full width header + subfields in one row
+                                                        <div key={index} className="col-span-2 space-y-4">
+                                                            <h3 className="font-semibold text-base">{field.title}</h3>
+                                                            {/* Subfields in one row, spaced evenly */}
+                                                            <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-4">
+                                                                {field.fields.map((subField, subIndex) => (
+                                                                    <div key={subIndex} className="flex flex-col">
+                                                                        <label htmlFor={subField.name} className="mb-1 text-left font-medium">
+                                                                            {subField.label}
+                                                                        </label>
+                                                                        {subField.type === 'textarea' ? (
+                                                                            <textarea
+                                                                                required
+                                                                                id={subField.name}
+                                                                                name={subField.name}
+                                                                                placeholder={subField.placeholder}
+                                                                                className="p-2 text-sm bg-white dark:bg-neutral-800 text-black dark:text-white border rounded"
+                                                                                onChange={handleFormChange}
+                                                                                value={formValues[subField.name] || ""}
+                                                                            />
+                                                                        ) : subField.type === 'select' ? (
+                                                                            <select
+                                                                                id={subField.name}
+                                                                                name={subField.name}
+                                                                                className="p-2 text-sm bg-white dark:bg-neutral-800 text-black dark:text-white border rounded"
+                                                                                onChange={handleFormChange}
+                                                                                value={formValues[subField.name] || ''}
+                                                                            >
+                                                                                <option value="">Select an option</option>
+                                                                                {subField.options?.map((opt) => (
+                                                                                    <option key={opt.value} value={opt.value}>
+                                                                                        {opt.label}
+                                                                                    </option>
+                                                                                ))}
+                                                                            </select>
+                                                                        ) : subField.type === 'multiselect' ? (
+                                                                            <div id={subField.name} className="flex flex-col gap-2">
+                                                                                {subField.options?.map((opt) => (
+                                                                                    <label key={opt.value} className="inline-flex items-center gap-2 text-sm text-black dark:text-white">
+                                                                                        <input
+                                                                                            type="checkbox"
+                                                                                            name={subField.name}
+                                                                                            value={formValues[subField.name] || ''}
+                                                                                            checked={
+                                                                                                Array.isArray(formValues[subField.name]) &&
+                                                                                                (formValues[subField.name] as string[]).includes(opt.value)
+                                                                                            }
+                                                                                            onChange={(e) => {
+                                                                                                const isChecked = e.target.checked;
+                                                                                                setFormValues((prev) => {
+                                                                                                    const current = Array.isArray(prev[subField.name]) ? (prev[subField.name] as string[]) : [];
+                                                                                                    const updated = isChecked
+                                                                                                        ? [...current, opt.value]
+                                                                                                        : current.filter((val: string) => val !== opt.value);
+                                                                                                    return {
+                                                                                                        ...prev,
+                                                                                                        [subField.name]: updated,
+                                                                                                    };
+                                                                                                });
+                                                                                            }}
+                                                                                            className="p-2 border rounded bg-white dark:bg-neutral-800"
+                                                                                        />
+                                                                                        {opt.label}
+                                                                                    </label>
+                                                                                ))}
+                                                                            </div>
+                                                                        ) : (
+                                                                            <input
+                                                                                required
+                                                                                id={subField.name}
+                                                                                type={subField.type}
+                                                                                name={subField.name}
+                                                                                placeholder={subField.placeholder}
+                                                                                className="p-2 text-sm bg-white dark:bg-neutral-800 text-black dark:text-white border rounded"
+                                                                                onChange={handleFormChange}
+                                                                                value={formValues[subField.name] || ""}
+                                                                            />
+                                                                        )}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        // SINGLE FIELD, each takes half the width of grid cols-2
+                                                        <div key={index} className="flex flex-col">
+                                                            <label htmlFor={field.name} className="mb-1 text-left font-medium">
+                                                                {field.label}
+                                                            </label>
+                                                            {/* Same input types as above */}
+                                                            {field.type === 'textarea' ? (
+                                                                <textarea
+                                                                    required
+                                                                    id={field.name}
+                                                                    name={field.name}
+                                                                    placeholder={field.placeholder}
+                                                                    className="p-2 text-sm bg-white dark:bg-neutral-800 text-black dark:text-white border rounded"
+                                                                    onChange={handleFormChange}
+                                                                    value={formValues[field.name] || ""}
+                                                                />
+                                                            ) : field.type === 'select' ? (
+                                                                <select
+                                                                    id={field.name}
+                                                                    name={field.name}
+                                                                    className="p-2 text-sm bg-white dark:bg-neutral-800 text-black dark:text-white border rounded"
+                                                                    onChange={handleFormChange}
+                                                                    value={formValues[field.name] || ""}
+                                                                >
+                                                                    <option value="">Select an option</option>
+                                                                    {field.options?.map(opt => (
+                                                                        <option key={opt.value} value={opt.value}>
+                                                                            {opt.label}
+                                                                        </option>
+                                                                    ))}
+                                                                </select>
+                                                            ) : field.type === 'multiselect' ? (
+                                                                <div id={field.name} className="flex flex-col gap-2">
+                                                                    {field.options?.map((opt) => (
+                                                                        <label key={opt.value} className="inline-flex items-center gap-2 text-sm text-black dark:text-white">
+                                                                            <input
+                                                                                type="checkbox"
+                                                                                name={field.name}
+                                                                                value={formValues[field.name] || ""}
+                                                                                checked={Array.isArray(formValues[field.name]) && (formValues[field.name] as string[]).includes(opt.value)}
+                                                                                onChange={(e) => {
+                                                                                    const isChecked = e.target.checked;
+                                                                                    setFormValues((prev) => {
+                                                                                        const current = Array.isArray(prev[field.name])
+                                                                                            ? (prev[field.name] as string[])
+                                                                                            : [];
+                                                                                        const updated = isChecked
+                                                                                            ? [...current, opt.value]
+                                                                                            : current.filter((val: string) => val !== opt.value);
+                                                                                        return {
+                                                                                            ...prev,
+                                                                                            [field.name]: updated,
+                                                                                        };
+                                                                                    });
+                                                                                }}
+                                                                                className="p-2 border rounded bg-white dark:bg-neutral-800"
+                                                                            />
+                                                                            {opt.label}
+                                                                        </label>
+                                                                    ))}
+                                                                </div>
+                                                            ) : (
+                                                                <input
+                                                                    required
+                                                                    id={field.name}
+                                                                    type={field.type}
+                                                                    name={field.name}
+                                                                    placeholder={field.placeholder}
+                                                                    className="p-2 text-sm bg-white dark:bg-neutral-800 text-black dark:text-white border rounded"
+                                                                    onChange={handleFormChange}
+                                                                    value={formValues[field.name] || ""}
+                                                                />
+                                                            )}
+                                                        </div>
+                                                    )
+                                                )}
+                                            </div>
+                                            {/* ERROR MESSAGE + BUTTON - NOT AFFECTED BY GRID */}
+                                            <div className="flex flex-col items-center justify-center pt-4 space-y-2">
+                                                {formError && (
+                                                    <p className="text-base text-red-700 dark:text-red-500 font-serif">
+                                                        ❌ {submitFormError}
+                                                    </p>
+                                                )}
+                                                <button
+                                                    type="submit"
+                                                    onClick={handleFormSubmit}
+                                                    className="px-4 py-2 text-sm bg-black dark:bg-white text-white dark:text-black rounded-full hover:bg-neutral-800 dark:hover:bg-neutral-100"
+                                                >
+                                                    {submitForm}
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        {formTemplate?.fields && formTemplate.fields.length > 0 && !inputEnable && (
+                            <div className="flex flex-col items-center justify-center py-4">
+                                <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-gray-500 dark:border-gray-400 mr-2"></div>
+                                <span className="w-full p-4 text-center italic text-gray-500 dark:text-gray-400">{loadingForm}</span>
                             </div>
                         )}
 
@@ -745,6 +1487,27 @@ function ChatComponent({
 
             </div>
 
+            {/* Sidebar */}
+            {isChatSidebarOpen && (
+                <div className="md:w-1/2 md:h-full w-full h-1/2 bg-white dark:bg-neutral-800 border-t md:border-l shadow-lg p-4 flex flex-col">
+                    <div className="flex flex-row justify-between items-center w-full">
+                        <h2 className="flex flex-row items-center md:text-lg text-base font-bold text-neutral-800 dark:text-white p-0">
+                            <FiSidebar className="mr-2" /> {analysisTitle}
+                        </h2>
+                        <button onClick={closeSidebar} className="self-end text-neutral-600 dark:text-neutral-300 text-2xl">
+                            <FiX />
+                        </button>
+                    </div>
+                    {answer && (
+                        <div className="mt-4 flex-1 w-full overflow-auto">
+                            <AnalysisComponent 
+                                answer={answer} 
+                                selectedLanguage={selectedLanguage}
+                            />
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 }
