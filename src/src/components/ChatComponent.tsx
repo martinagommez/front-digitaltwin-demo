@@ -23,6 +23,7 @@ interface Message {
     id: string;
     files?: File[];
     images?: string[];
+    bot_image?: string[]; // backend-generated images
     sender: 'user' | 'bot' | 'debug' | 'websocket';
     agent?: string;
     orch_config_id: string|undefined;
@@ -129,105 +130,6 @@ function ChatComponent({
         }
     };
 
-    const exampleTemplate: Template = {
-        title: "Intent Configuration Form",
-        fields: [
-          {
-            label: "Bot Name",
-            type: "text",
-            name: "botName",
-            placeholder: "Enter bot name"
-          },
-          {
-            label: "Bot Description",
-            type: "textarea",
-            name: "botDescription",
-            placeholder: "Describe the bot's purpose"
-          },
-          {
-            label: "Primary Intent",
-            type: "select",
-            name: "primaryIntent",
-            options: [
-              { label: "Greeting", value: "greeting" },
-              { label: "Goodbye", value: "goodbye" },
-              { label: "FAQ", value: "faq" }
-            ]
-          },
-          {
-            label: "Related Intents",
-            type: "multiselect",
-            name: "relatedIntents",
-            options: [
-              { label: "Order Status", value: "order_status" },
-              { label: "Cancel Order", value: "cancel_order" },
-              { label: "Shipping Info", value: "shipping_info" },
-              { label: "Returns", value: "returns" }
-            ]
-          },
-          // Nested group of subfields example:
-          {
-            title: "Response Settings",
-            fields: [
-              {
-                label: "Response Type",
-                type: "select",
-                name: "responseType",
-                options: [
-                  { label: "Text", value: "text" },
-                  { label: "Audio", value: "audio" },
-                  { label: "Video", value: "video" }
-                ]
-              },
-              {
-                label: "Response Text",
-                type: "textarea",
-                name: "responseText",
-                placeholder: "Enter the default response"
-              },
-              {
-                label: "Enable Fallback",
-                type: "select",
-                name: "enableFallback",
-                options: [
-                  { label: "Yes", value: "yes" },
-                  { label: "No", value: "no" }
-                ]
-              },
-              {
-                label: "Fallback Responses",
-                type: "multiselect",
-                name: "fallbackResponses",
-                options: [
-                  { label: "Sorry, can you repeat?", value: "repeat" },
-                  { label: "I didn't get that", value: "not_understood" },
-                  { label: "Please rephrase", value: "rephrase" }
-                ]
-              }
-            ]
-          },
-          // Another nested group for advanced options:
-          {
-            title: "Advanced Options",
-            fields: [
-              {
-                label: "Confidence Threshold",
-                type: "text",
-                name: "confidenceThreshold",
-                placeholder: "e.g. 0.7"
-              },
-              {
-                label: "Max Retry Attempts",
-                type: "text",
-                name: "maxRetries",
-                placeholder: "e.g. 3"
-              }
-            ]
-          }
-        ]
-      };
-      
-
     useEffect(() => {
         console.log("Setting answer:", exampleAnswer);
         setAnswer(exampleAnswer);
@@ -269,6 +171,7 @@ function ChatComponent({
             });
             console.log("Response from backend", response);
             const apiResponse = response.data.response;
+            const botImage = response.data.bot_image ? [response.data.bot_image] : [];
             setSessionId(response.data.session_id);
             setToken(response.data.token);
             setFormTemplate(response.data.template_fields);
@@ -294,6 +197,7 @@ function ChatComponent({
                             id: messageId, 
                             files: [], 
                             images: [], 
+                            bot_image: botImage,
                             sender: 'bot',
                             orch_config_id: pluginKeys!.orch_config_id, 
                             orch_config_key: pluginKeys!.orch_config_key
@@ -319,6 +223,7 @@ function ChatComponent({
                     id: messageId, 
                     files: [], 
                     images: [], 
+                    bot_image: [],
                     sender: 'bot',
                     orch_config_id: pluginKeys!.orch_config_id, 
                     orch_config_key: pluginKeys!.orch_config_key
@@ -722,6 +627,10 @@ function ChatComponent({
         enableEndedNotification: true,
         enableEndedPopup: false,
         displayAgents: true,
+        enableFeedback: true,
+        enableAudio: true,
+        enableCopy: true,
+        enableAnalysis: false
 	});
 
     // Update das features com os valores alterados no json
@@ -739,6 +648,10 @@ function ChatComponent({
                         enableEndedNotification: data.enableFeatures.enableEndedNotification ?? true,
                         enableEndedPopup: data.enableFeatures.enableEndedPopup ?? false,
                         displayAgents: data.enableFeatures.displayAgents ?? true,
+                        enableFeedback: data.enableFeatures.enableFeedback ?? true,
+                        enableAudio: data.enableFeatures.enableAudio ?? true,
+                        enableCopy: data.enableFeatures.enableCopy ?? true,
+                        enableAnalysis: data.enableFeatures.enableAnalysis ?? false
 					});
 				}
                 setFeedbackApi(data.feedbackApi || '');
@@ -885,23 +798,31 @@ function ChatComponent({
                                                 `}
                                         >
                                             {/* Copy Button */}
-                                            <button
-                                                onClick={() => {console.log("📎 Copy - message.id onClick:", message.id); copyToClipboard(message.text, message.id)}}
-                                                className="w-6 h-6 text-black dark:text-white hover:text-neutral-700 dark:hover:text-neutral-300"
-                                            >
-                                                {copiedMessageId === message.id ? (
-                                                    <FiCheck className="w-4 h-4" />
-                                                ) : (
-                                                    <FiCopy className="w-4 h-4" />
-                                                )}
-                                            </button>
+                                            {featuresStates.enableCopy && (
+                                                <div>
+                                                    <button
+                                                        onClick={() => {console.log("📎 Copy - message.id onClick:", message.id); copyToClipboard(message.text, message.id)}}
+                                                        className="w-6 h-6 text-black dark:text-white hover:text-neutral-700 dark:hover:text-neutral-300"
+                                                    >
+                                                        {copiedMessageId === message.id ? (
+                                                            <FiCheck className="w-4 h-4" />
+                                                        ) : (
+                                                            <FiCopy className="w-4 h-4" />
+                                                        )}
+                                                    </button>
+                                                </div>
+                                            )}
                                             {/* Analysis Sidebar Button */}
-                                            <button
-                                                onClick={() => handleAnalysis()}
-                                                className="w-6 h-6 text-black dark:text-white hover:text-neutral-700 dark:hover:text-neutral-300"
-                                            >
-                                                <FiSidebar className="w-4 h-4" />
-                                            </button>
+                                            {featuresStates.enableAnalysis && (
+                                                <div>
+                                                    <button
+                                                        onClick={() => handleAnalysis()}
+                                                        className="w-6 h-6 text-black dark:text-white hover:text-neutral-700 dark:hover:text-neutral-300"
+                                                    >
+                                                        <FiSidebar className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
 
@@ -937,6 +858,22 @@ function ChatComponent({
                                             </div>
                                     )}
 
+                                    {/* Display bot-sent images in chat area*/}
+                                    {message.bot_image && message.bot_image.length > 0 && (
+                                        <div className="w-56 h-auto">
+                                            {message.bot_image.map((bot_image, i: number) => (
+                                                <div key={i} className="flex flex-col items-start bg-neutral-100 dark:bg-neutral-800 p-2 m-4">
+                                                    <img
+                                                        src={bot_image}
+                                                        alt={`AI generated image ${i}`}
+                                                        className="rounded-md border border-gray-300 dark:border-gray-700"
+                                                    />
+                                                    <span className="text-xs text-gray-500 mb-1">AI generated image</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
                                     {/* Display sent images in chat area */}
                                     {message.images && message.images.length > 0 && (
                                         <div className="w-56 h-auto">
@@ -969,40 +906,48 @@ function ChatComponent({
                                     {/* Buttons for each message: Like, Dislike and Audio*/}
                                     {message.text && !(index === messages.length - 1 && !inputEnable) && (
                                         <div key={message.id} className={`flex ${message.sender === 'user' ? 'hidden' : 'justify-start'}`}>
-                                            <button
-                                                onClick={() => handleFeedback(message.id, "like")}
-                                                className="flex items-center justify-center w-5 h-5 mr-1
-                                                    text-black dark:text-white hover:text-neutral-700 dark:hover:text-neutral-300"
-                                            >
-                                                {messageFeedback[message.id] === "like" ? (
-                                                    <AiFillLike className="w-5 h-5" />
-                                                ) : (
-                                                    <AiOutlineLike className="w-5 h-5" />
-                                                )}
-                                            </button>
-                                            <button
-                                                onClick={() => handleFeedback(message.id, "dislike")}
-                                                className="flex items-center justify-center w-5 h-5 mr-2
-                                                    text-black dark:text-white hover:text-neutral-700 dark:hover:text-neutral-300"
-                                            >
-                                                {messageFeedback[message.id] === "dislike" ? (
-                                                    <AiFillDislike className="w-5 h-5" />
-                                                ) : (
-                                                    <AiOutlineDislike className="w-5 h-5" />
-                                                )}
-                                            </button>
-                                            <button
-                                                title={playingMessageId === message.id ? audioPauseButton : audioPlayButton}
-                                                onClick={() => {console.log("🎵 Play/Pause - message.id onClick:", message.id); playChatbotResponse(message.text, message.id);}}
-                                                className="flex items-center justify-center rounded-full w-5 h-5 mb-2 
-                                                    bg-black dark:bg-white text-neutral-200 dark:text-neutral-900 hover:bg-neutral-700 dark:hover:bg-neutral-300"
-                                            >
-                                                {playingMessageId === message.id ? (
-                                                    <FaPause className="w-[10px] h-[10px] ml-[1px]" />
-                                                ) : (
-                                                    <FaPlay className="w-[10px] h-[10px] ml-[1px]" />
-                                                )}
-                                            </button>
+                                            {featuresStates.enableFeedback && (
+                                                <div>
+                                                    <button
+                                                        onClick={() => handleFeedback(message.id, "like")}
+                                                        className="flex items-center justify-center w-5 h-5 mr-1
+                                                            text-black dark:text-white hover:text-neutral-700 dark:hover:text-neutral-300"
+                                                    >
+                                                        {messageFeedback[message.id] === "like" ? (
+                                                            <AiFillLike className="w-5 h-5" />
+                                                        ) : (
+                                                            <AiOutlineLike className="w-5 h-5" />
+                                                        )}
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleFeedback(message.id, "dislike")}
+                                                        className="flex items-center justify-center w-5 h-5 mr-2
+                                                            text-black dark:text-white hover:text-neutral-700 dark:hover:text-neutral-300"
+                                                    >
+                                                        {messageFeedback[message.id] === "dislike" ? (
+                                                            <AiFillDislike className="w-5 h-5" />
+                                                        ) : (
+                                                            <AiOutlineDislike className="w-5 h-5" />
+                                                        )}
+                                                    </button>
+                                                </div>
+                                            )}
+                                            {featuresStates.enableAudio && (
+                                                <div>
+                                                    <button
+                                                        title={playingMessageId === message.id ? audioPauseButton : audioPlayButton}
+                                                        onClick={() => {console.log("🎵 Play/Pause - message.id onClick:", message.id); playChatbotResponse(message.text, message.id);}}
+                                                        className="flex items-center justify-center rounded-full w-5 h-5 mb-2 
+                                                            bg-black dark:bg-white text-neutral-200 dark:text-neutral-900 hover:bg-neutral-700 dark:hover:bg-neutral-300"
+                                                    >
+                                                        {playingMessageId === message.id ? (
+                                                            <FaPause className="w-[10px] h-[10px] ml-[1px]" />
+                                                        ) : (
+                                                            <FaPlay className="w-[10px] h-[10px] ml-[1px]" />
+                                                        )}
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>

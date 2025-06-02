@@ -19,8 +19,9 @@
     "enableFeatures": {
         "enableNewChat": true,
         "enableDarkMode": true,
-        "enableDebugMode": true,
+        "enableDebugMode": false,
         "enableAudio": true,
+        "enableFeedback": false,
         "pluginsTitleOption": true,
         "displayAgents": false,
         "browserLanguage": false,
@@ -32,6 +33,7 @@
         "enableExpiredPopup": true,
         "enableEndedNotification": true,
         "enableEndedPopup": true,
+        "enableAnalysis": false,
         "isThoughtProcess": true,
         "isSupportingContent": true,
         "isCitations": true
