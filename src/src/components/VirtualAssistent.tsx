@@ -1,13 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { FaSun, FaMoon, FaLanguage } from 'react-icons/fa';
-import { FaBug, FaBugSlash} from 'react-icons/fa6';
-import { IoVolumeHigh, IoVolumeMute } from "react-icons/io5";
 import { RiChatNewFill } from 'react-icons/ri';
 import { PluginMeta, PluginRequest, PluginKeys } from '../models/requests/PluginApi';
 import axios from 'axios';
 import { MdMenu } from 'react-icons/md';
 import ChatComponent from './ChatComponent';
-import FilesProcessing from './FilesProcessing';
 import { fetchAndUpdateCSSVariables } from './cssUtils';
 
 type Language = {
@@ -19,7 +16,6 @@ type Language = {
 function VirtualAssistent() {
 	const [inputEnable, setInputEnable] = useState<boolean>(true);
 	const [debugMode, setDebugMode] = useState<boolean>(false);
-	const [audioEnable, setAudioEnable] = useState<boolean>(false);
 	const [pluginRequestData, setPluginRequest] = useState<PluginRequest | null>(null);
 	const [activedPlugin, setActivedPlugin] = useState<PluginMeta | null>(null);
 	const [setupApi, setSetupApi] = useState<string>('');
@@ -28,7 +24,6 @@ function VirtualAssistent() {
 		return savedMode ? JSON.parse(savedMode).status : false;
 	});
 	const [showSidebar, setShowSidebar] = useState<boolean>(false); //App sidebar ChatComponent
-	const [isFilesSidebarOpen, setIsFilesSidebarOpen] = useState(false); // FilesProcessing
 	const [isChatSidebarOpen, setIsChatSidebarOpen] = useState(false); // ChatComponent
 	const [showLanguageDropdown, setShowLanguageDropdown] = useState<boolean>(false);
     const [language, setLanguage] = useState<string | null>(null); // No default language
@@ -43,8 +38,6 @@ function VirtualAssistent() {
 		newChatButton: 'New Chat',
 		lightModeButton: 'Light Mode',
 		darkModeButton: 'Dark Mode',
-		debugModeButton: 'Debug Mode',
-		autoAudioPlayButton: 'Auto Audio Play',
 		languageSelectButton: 'Select Language',
 		availableLanguagesTitle: 'Available Languages',
 	});
@@ -71,16 +64,6 @@ function VirtualAssistent() {
 	// Switch entre dark mode e light mode
 	const toggleDarkMode = () => {
 		setDarkMode(prevMode => !prevMode);
-	};
-
-	// Switch entre debug mode
-	const toggleDebugMode = () => {
-		setDebugMode(prevMode => !prevMode);
-	};
-
-	// Switch entre auto audio play
-	const autoAudioPlay = () => {
-		setAudioEnable(prevMode => !prevMode);
 	};
 
 	// Display da sidebar
@@ -230,8 +213,6 @@ function VirtualAssistent() {
 						newChatButton: data.newChatButton[language] || data.newChatButton['en-US'],
 						darkModeButton: data.darkModeButton[language] || data.darkModeButton['en-US'],
 						lightModeButton: data.lightModeButton[language] || data.lightModeButton['en-US'],
-						debugModeButton: data.debugModeButton[language] || data.debugModeButton['en-US'],
-						autoAudioPlayButton: data.autoAudioPlayButton[language] || data.autoAudioPlayButton['en-US'],
 						languageSelectButton: data.languageSelectButton[language] || data.languageSelectButton['en-US'],
 						availableLanguagesTitle: data.availableLanguagesTitle[language] || data.availableLanguagesTitle['en-US'],
 					});
@@ -276,7 +257,7 @@ function VirtualAssistent() {
 	return (
 		<div className="flex flex-col bg-neutral-100 dark:bg-neutral-950">
 			{/* Header */}
-			<header className="bg-white dark:bg-neutral-900 shadow-md p-4 h-20 md:h-24">
+			<header className="bg-white dark:bg-neutral-900 shadow-md p-4 h-20">
 				<div className="flex items-center justify-between w-full gap-4">
 					{/* Logo */}
 					<div className="flex items-center min-w-0">
@@ -293,44 +274,12 @@ function VirtualAssistent() {
 					{isConfigLoaded && (
 						<div className="flex items-center gap-2 flex-shrink-0">
 							<div className="hidden md:flex space-x-2">
-								{/* Debug Button */}
-								{featuresStates.enableDebugMode && (
-									<div className="relative group">
-										<button
-											title={buttonLabels.debugModeButton}
-											className={`flex items-center justify-center w-10 h-10 dark:bg-[#414141] dark:hover:bg-[#2a2a2a] text-neutral-500 dark:text-neutral-200 rounded-lg shadow-md focus:outline-none
-												${inputEnable ? 'bg-neutral-300 hover:bg-[#acabab]' : 'cursor-not-allowed bg-neutral-300 hover:bg-neutral-300 dark:hover:bg-[#414141]'}
-												${(!inputEnable || showLanguageSelection) ? 'cursor-not-allowed bg-neutral-300 hover:bg-neutral-300 dark:hover:bg-[#414141]' : ''}
-											`}
-											onClick={toggleDebugMode}
-											disabled={!inputEnable || showLanguageSelection} // Disable when input is not enabled
-										>
-											{debugMode ? <FaBug className="text-xl" /> : <FaBugSlash className="text-xl" />}
-										</button>
-									</div>
-								)}
-								{/* Audio Button */}
-								{featuresStates.enableAudio && (
-									<div className="relative group">
-										<button
-											title={buttonLabels.autoAudioPlayButton}
-											onClick={autoAudioPlay}
-											className={`flex items-center justify-center w-10 h-10 dark:bg-[#414141] dark:hover:bg-[#2a2a2a] text-neutral-500 dark:text-neutral-200 rounded-lg shadow-md focus:outline-none
-												${inputEnable ? 'bg-neutral-300 hover:bg-[#acabab]' : 'cursor-not-allowed bg-neutral-300 hover:bg-neutral-300 dark:hover:bg-[#414141]'}
-												${(!inputEnable || showLanguageSelection) ? 'cursor-not-allowed bg-neutral-300 hover:bg-neutral-300 dark:hover:bg-[#414141]' : ''}
-											`}
-											disabled={!inputEnable || showLanguageSelection} // Disable when input is not enabled
-										>
-											{audioEnable ? <IoVolumeHigh className="text-2xl" /> : <IoVolumeMute className="text-2xl" />}
-										</button>
-									</div>
-								)}
 								{/* Languages Button */}
 								{featuresStates.enableLanguages && (
 									<div className="relative group">
 										<button
 											title={buttonLabels.languageSelectButton}
-											className={`flex items-center justify-center w-10 h-10 dark:bg-[#414141] dark:hover:bg-[#2a2a2a] text-neutral-500 dark:text-neutral-200 rounded-lg shadow-md focus:outline-none
+											className={`flex items-center justify-center w-10 h-10 dark:bg-[#414141] dark:hover:bg-[#2a2a2a] text-neutral-500 dark:text-neutral-200 rounded-full shadow-md focus:outline-none
 												${inputEnable ? 'bg-neutral-300 hover:bg-[#acabab]' : 'cursor-not-allowed bg-neutral-300 hover:bg-neutral-300 dark:hover:bg-[#414141]'}
 												${(!inputEnable || showLanguageSelection) ? 'cursor-not-allowed bg-neutral-300 hover:bg-neutral-300 dark:hover:bg-[#414141]' : ''}
 											`}
@@ -421,7 +370,7 @@ function VirtualAssistent() {
 
 			{/* Language Selection and Chat Box */}
 			{isConfigLoaded && showLanguageSelection ? (
-				<div className=" flex flex-col flex-grow h-[calc(100vh-5rem)] md:h-[calc(100vh-6rem)] p-4 items-center justify-center border-2
+				<div className=" flex flex-col flex-grow h-[calc(100vh-5rem)] p-4 items-center justify-center border-2
 					bg-neutral-100 dark:bg-neutral-900 border-neutral-400 dark:border-neutral-600">
 					<h2 className="text-lg md:text-xl font-semibold text-neutral-900 dark:text-white">Welcome to our chat</h2>	
 					<h2 className="text-lg md:text-xl font-semibold mb-8 text-neutral-900 dark:text-white">Choose your language to start</h2>
@@ -439,7 +388,7 @@ function VirtualAssistent() {
 					</div>
 				</div>
 			) : (activedPlugin === null && (
-				<div className="flex flex-col flex-grow h-[calc(100vh-5rem)] md:h-[calc(100vh-6rem)] p-4 items-center justify-center border-2
+				<div className="flex flex-col flex-grow h-[calc(100vh-5rem)] p-4 items-center justify-center border-2
 					bg-neutral-100 dark:bg-neutral-900 border-neutral-400 dark:border-neutral-600
 					[&::-webkit-scrollbar]:w-2
 					[&::-webkit-scrollbar-track]:rounded-full
@@ -494,29 +443,8 @@ function VirtualAssistent() {
 				</div>
 			))}
 
-			{pluginType === 'files' && (	
-				<div className={`flex-grow h-[calc(100vh-5rem)] md:h-[calc(100vh-6rem)] p-4 flex items-center justify-center 
-					${isFilesSidebarOpen ? 'w-full' : ''}
-					`}>
-					<div className={`flex w-full h-full
-						${isFilesSidebarOpen ? 'justify-start' : 'justify-center'}
-						`}>
-						<div className={`bg-white dark:bg-neutral-800 shadow-lg text-center flex flex-grow top-0 overflow-hidden 
-							${isFilesSidebarOpen ? 'w-full' : 'max-w-5xl'}
-							`}>
-								<FilesProcessing 
-									activedPlugin={activedPlugin} setActivedPlugin={setActivedPlugin}
-									debugMode={debugMode} setDebugMode={setDebugMode}
-									isFilesSidebarOpen={isFilesSidebarOpen} setIsFilesSidebarOpen={setIsFilesSidebarOpen} 
-									selectedLanguage={language || 'en-US'}
-								/>
-						</div>
-					</div>
-				</div>
-			)}
-
 			{pluginType === 'chatbot' && activedPlugin && (	
-				<div className={`flex-grow h-[calc(100vh-5rem)] md:h-[calc(100vh-6rem)] p-4 flex items-center justify-center 
+				<div className={`flex-grow h-[calc(100vh-5rem)] p-4 flex items-center justify-center 
 					${isChatSidebarOpen ? 'w-full' : ''}
 					`}>
 					<div className={`flex w-full h-full 
@@ -533,7 +461,6 @@ function VirtualAssistent() {
 								isChatSidebarOpen={isChatSidebarOpen} setIsChatSidebarOpen={setIsChatSidebarOpen}
 								selectedLanguage={language || 'en-US'}
 								darkMode={darkMode}
-								autoAudioPlay={audioEnable}
 							/>
 						</div>
 					</div>
@@ -551,19 +478,6 @@ function VirtualAssistent() {
 				}`}
 			>
 				<div className="p-4 flex flex-col space-y-4">
-					{/* New Chat Button */}
-					{featuresStates.enableNewChat && (
-						<button
-							className={`flex items-center space-x-2 w-full h-14 px-4 py-2 rounded-lg shadow-md focus:outline-none ${
-								inputEnable ? 'bg-[#d0d0d0] hover:bg-[#acabab]' : 'bg-neutral-300 cursor-not-allowed'
-							} dark:bg-[#414141] text-neutral-500 dark:text-neutral-200 dark:hover:bg-[#2a2a2a]`}
-							onClick={createNewChat}
-							disabled={!inputEnable} // Disable when input is not enabled
-						>
-							<RiChatNewFill className="w-5 h-5 flex-shrink-0" />
-							<span className='text-sm text-left'>{buttonLabels.newChatButton}</span>
-						</button>
-					)}
 					{/* Mode Toggle Button */}
 					{featuresStates.enableDarkMode && (
 						<button
@@ -577,36 +491,6 @@ function VirtualAssistent() {
 								<FaMoon className="text-neutral-500 w-5 h-5 flex-shrink-0" />
 							)}
 							<span className='text-sm text-left'>{darkMode ? buttonLabels.lightModeButton : buttonLabels.darkModeButton}</span>
-						</button>
-					)}
-					{/* Mode Debug Button */}
-					{featuresStates.enableDebugMode && (
-						<button
-							className="flex items-center space-x-2 w-full h-14 px-4 py-2 rounded-lg shadow-md
-							bg-[#d0d0d0] dark:bg-[#414141] text-neutral-500 dark:text-neutral-200 hover:bg-[#acabab] dark:hover:bg-[#2a2a2a]"
-							onClick={toggleDebugMode}
-						>
-							{debugMode ? (
-								<FaBug className="w-5 h-5 flex-shrink-0" />
-							) : (
-								<FaBugSlash className="w-5 h-5 flex-shrink-0" />
-							)}
-							<span className='text-sm text-left'>{buttonLabels.debugModeButton}</span>
-						</button>
-					)}
-					{/* Auto Audio Play Button */}
-					{featuresStates.enableAudio && (
-						<button
-							className="flex flex-row items-center space-x-2 w-full h-14 px-4 py-2 rounded-lg shadow-md
-							bg-[#d0d0d0] dark:bg-[#414141] text-neutral-500 dark:text-neutral-200 hover:bg-[#acabab] dark:hover:bg-[#2a2a2a]"
-							onClick={autoAudioPlay}
-						>
-							{audioEnable ? (
-								<IoVolumeHigh className="w-5 h-5 flex-shrink-0" />
-							) : (
-								<IoVolumeMute className="w-5 h-5 flex-shrink-0" />
-							)}
-							<span className='text-sm text-left'>{buttonLabels.autoAudioPlayButton}</span>
 						</button>
 					)}
 				</div>
