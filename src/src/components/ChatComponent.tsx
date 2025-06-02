@@ -256,6 +256,11 @@ function ChatComponent({
         enableEndedNotification: true,
         enableEndedPopup: false,
         displayAgents: true,
+        enableFeedback: true,
+        enableAudio: true,
+        enableCopy: true,
+        enableAnalysis: false
+
 	});
 
     // Update das features com os valores alterados no json
@@ -273,6 +278,11 @@ function ChatComponent({
                         enableEndedNotification: data.enableFeatures.enableEndedNotification ?? true,
                         enableEndedPopup: data.enableFeatures.enableEndedPopup ?? false,
                         displayAgents: data.enableFeatures.displayAgents ?? true,
+                        enableFeedback: data.enableFeatures.enableFeedback ?? true,
+                        enableAudio: data.enableFeatures.enableAudio ?? true,
+                        enableCopy: data.enableFeatures.enableCopy ?? true,
+                        enableAnalysis: data.enableFeatures.enableAnalysis ?? false
+
 					});
 				}
                 console.log('Language Data:', data);
@@ -417,6 +427,41 @@ function ChatComponent({
                                             : "bg-neutral-200 text-black dark:bg-neutral-900 dark:text-white pt-10 text-xs md:text-sm"
                                     }`}
                                 >
+                                    {!(index === messages.length - 1 && !inputEnable) && (
+                                        <div
+                                            className={`absolute flex flex-row items-center justify-between p-1 top-3 right-3
+                                                ${message.sender === 'user' ? 'hidden' : 'justify-end'}
+                                                `}
+                                        >
+                                            {/* Copy Button */}
+                                            {featuresStates.enableCopy && (
+                                                <div>
+                                                    <button
+                                                        onClick={() => {console.log("📎 Copy - message.id onClick:", message.id); copyToClipboard(message.text, message.id)}}
+                                                        className="w-6 h-6 text-black dark:text-white hover:text-neutral-700 dark:hover:text-neutral-300"
+                                                    >
+                                                        {copiedMessageId === message.id ? (
+                                                            <FiCheck className="w-4 h-4" />
+                                                        ) : (
+                                                            <FiCopy className="w-4 h-4" />
+                                                        )}
+                                                    </button>
+                                                </div>
+                                            )}
+                                            {/* Analysis Sidebar Button */}
+                                            {featuresStates.enableAnalysis && (
+                                                <div>
+                                                    <button
+                                                        onClick={() => handleAnalysis()}
+                                                        className="w-6 h-6 text-black dark:text-white hover:text-neutral-700 dark:hover:text-neutral-300"
+                                                    >
+                                                        <FiSidebar className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            )}
+
+                                        </div>
+                                    )}
 
                                     {/* Message Text */}
                                     {message.formFields ? (
@@ -492,6 +537,56 @@ function ChatComponent({
                                                     </div>
                                                 </div>
                                             ))}
+                                        </div>
+                                    )}
+
+                                    {/* Buttons for each message: Like, Dislike and Audio*/}
+                                    {message.text && !(index === messages.length - 1 && !inputEnable) && (
+                                        <div key={message.id} className={`flex ${message.sender === 'user' ? 'hidden' : 'justify-start'}`}>
+                                            {/* Feedback buttons */}
+                                            {featuresStates.enableFeedback && (
+                                                <div className='flex'>
+                                                    <button
+                                                        onClick={() => handleFeedback(message.id, "like")}
+                                                        className="flex items-center justify-center w-5 h-5 mr-1
+                                                            text-black dark:text-white hover:text-neutral-700 dark:hover:text-neutral-300"
+                                                    >
+                                                        {messageFeedback[message.id] === "like" ? (
+                                                            <AiFillLike className="w-5 h-5" />
+                                                        ) : (
+                                                            <AiOutlineLike className="w-5 h-5" />
+                                                        )}
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleFeedback(message.id, "dislike")}
+                                                        className="flex items-center justify-center w-5 h-5 mr-2
+                                                            text-black dark:text-white hover:text-neutral-700 dark:hover:text-neutral-300"
+                                                    >
+                                                        {messageFeedback[message.id] === "dislike" ? (
+                                                            <AiFillDislike className="w-5 h-5" />
+                                                        ) : (
+                                                            <AiOutlineDislike className="w-5 h-5" />
+                                                        )}
+                                                    </button>
+                                                </div>
+                                            )}
+                                            {/* Play audio button */}
+                                            {featuresStates.enableAudio && (
+                                                <div>
+                                                    <button
+                                                        title={playingMessageId === message.id ? audioPauseButton : audioPlayButton}
+                                                        onClick={() => {console.log("🎵 Play/Pause - message.id onClick:", message.id); playChatbotResponse(message.text, message.id);}}
+                                                        className="flex items-center justify-center rounded-full w-5 h-5 mb-2 
+                                                            bg-black dark:bg-white text-neutral-200 dark:text-neutral-900 hover:bg-neutral-700 dark:hover:bg-neutral-300"
+                                                    >
+                                                        {playingMessageId === message.id ? (
+                                                            <FaPause className="w-[10px] h-[10px] ml-[1px]" />
+                                                        ) : (
+                                                            <FaPlay className="w-[10px] h-[10px] ml-[1px]" />
+                                                        )}
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
