@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { FiLoader } from "react-icons/fi";
 import { FaSun, FaMoon, FaLanguage } from 'react-icons/fa';
 import { FaBug, FaBugSlash} from 'react-icons/fa6';
 import { IoVolumeHigh, IoVolumeMute } from "react-icons/io5";
@@ -8,6 +9,7 @@ import axios from 'axios';
 import { MdMenu } from 'react-icons/md';
 import ChatComponent from './ChatComponent';
 import FilesProcessing from './FilesProcessing';
+import './styles.css';
 import { fetchAndUpdateCSSVariables } from './cssUtils';
 
 type Language = {
@@ -419,49 +421,38 @@ function VirtualAssistent() {
 				</div>
 			</header>
 
-			{/* Language Selection and Chat Box */}
-			{isConfigLoaded && showLanguageSelection ? (
-				<div className=" flex flex-col flex-grow h-[calc(100vh-5rem)] md:h-[calc(100vh-6rem)] p-4 items-center justify-center border-2
-					bg-neutral-100 dark:bg-neutral-900 border-neutral-400 dark:border-neutral-600">
-					<h2 className="text-lg md:text-xl font-semibold text-neutral-900 dark:text-white">Welcome to our chat</h2>	
-					<h2 className="text-lg md:text-xl font-semibold mb-8 text-neutral-900 dark:text-white">Choose your language to start</h2>
-					<div className="flex flex-wrap items-center justify-center gap-4">
-						{availableLanguages.map(({ code, label, flag }) => (
-							<button
-								key={code}
-								onClick={() => handleLanguageSelect(code)}
-								className={`flex items-center justify-center w-14 h-14 md:w-16 md:h-16 bg-white dark:bg-neutral-800 rounded-full shadow-lg hover:bg-neutral-300 dark:hover:bg-neutral-700`}
-							>
-								<img src={flag} alt={label} className="w-10 h-10 md:w-12 md:h-12" />
-								<span className="sr-only">{label}</span>
-							</button>
-						))}
-					</div>
+			{/* Plugin Loading Panel */}
+			{!pluginRequestData && activedPlugin === null && (
+				<div className="flex flex-col flex-grow h-[calc(100vh-5rem)] md:h-[calc(100vh-6rem)] p-4 items-center justify-center
+					border-2 bg-neutral-100 dark:bg-neutral-900 border-neutral-400 dark:border-neutral-600">
+					<FiLoader className="animate-spin spin-slow text-4xl text-neutral-800 dark:text-neutral-100 mb-4" />
+					<p className="text-neutral-800 dark:text-neutral-100 text-lg">Loading...</p>
 				</div>
-			) : (activedPlugin === null && (
-				<div className="flex flex-col flex-grow h-[calc(100vh-5rem)] md:h-[calc(100vh-6rem)] p-4 items-center justify-center border-2
-					bg-neutral-100 dark:bg-neutral-900 border-neutral-400 dark:border-neutral-600
-					[&::-webkit-scrollbar]:w-2
-					[&::-webkit-scrollbar-track]:rounded-full
-					[&::-webkit-scrollbar-track]:bg-[#d0d0d0]/20
-					dark:[&::-webkit-scrollbar-track]:bg-[#414141]/20
-					[&::-webkit-scrollbar-thumb]:rounded-full
-					[&::-webkit-scrollbar-thumb]:bg-[#d0d0d0]
-					dark:[&::-webkit-scrollbar-thumb]:bg-[#414141]
-					[&::-webkit-scrollbar-thumb]:hover:bg-[#acabab]
-					dark:[&::-webkit-scrollbar-thumb]:hover:bg-[#2a2a2a]"
-				>
-					{featuresStates.pluginsTitleOption && (
-						<h1 className="text-center mb-6 text-lg md:text-2xl font-bold text-neutral-800 dark:text-neutral-200">
-							{pluginsTitle}
-						</h1>
-					)}
-					{/* Display dos plugins */}
-					{activedPlugin === null && (pluginRequestData?.NumberOfPlugins ?? 0) > 1 && (
-						<div className="flex flex-col md:flex-row md:flex-wrap gap-2 p-2 md:p-4
-							items-center md:items-start justify-start md:justify-center
+			)}
+			{pluginRequestData && ( 
+				<>
+					{/* Language Selection and Chat Box */}
+					{isConfigLoaded && showLanguageSelection ? (
+						<div className=" flex flex-col flex-grow h-[calc(100vh-5rem)] md:h-[calc(100vh-6rem)] p-4 items-center justify-center border-2
+							bg-neutral-100 dark:bg-neutral-900 border-neutral-400 dark:border-neutral-600">
+							<h2 className="text-lg md:text-xl font-semibold text-neutral-900 dark:text-white">Welcome to our chat</h2>	
+							<h2 className="text-lg md:text-xl font-semibold mb-8 text-neutral-900 dark:text-white">Choose your language to start</h2>
+							<div className="flex flex-wrap items-center justify-center gap-4">
+								{availableLanguages.map(({ code, label, flag }) => (
+									<button
+										key={code}
+										onClick={() => handleLanguageSelect(code)}
+										className={`flex items-center justify-center w-14 h-14 md:w-16 md:h-16 bg-white dark:bg-neutral-800 rounded-full shadow-lg hover:bg-neutral-300 dark:hover:bg-neutral-700`}
+									>
+										<img src={flag} alt={label} className="w-10 h-10 md:w-12 md:h-12" />
+										<span className="sr-only">{label}</span>
+									</button>
+								))}
+							</div>
+						</div>
+					) : (activedPlugin === null && (
+						<div className="flex flex-col flex-grow h-[calc(100vh-5rem)] md:h-[calc(100vh-6rem)] p-4 items-center justify-center border-2
 							bg-neutral-100 dark:bg-neutral-900 border-neutral-400 dark:border-neutral-600
-							max-h-[calc(100vh-16rem)] md:max-w-[calc(100vw-20rem)] overflow-y-auto md:overflow-visible
 							[&::-webkit-scrollbar]:w-2
 							[&::-webkit-scrollbar-track]:rounded-full
 							[&::-webkit-scrollbar-track]:bg-[#d0d0d0]/20
@@ -472,73 +463,98 @@ function VirtualAssistent() {
 							[&::-webkit-scrollbar-thumb]:hover:bg-[#acabab]
 							dark:[&::-webkit-scrollbar-thumb]:hover:bg-[#2a2a2a]"
 						>
-							{pluginRequestData?.PluginList.map((plugin, index) => (
-								<button
-									key={index}
-									onClick={() => {
-										setActivedPlugin(plugin);
-										setInputEnable(true);
-										setPluginType(plugin.PluginType);
-										setPluginKeys(plugin.PluginKeys);
-									}}
-									className="border border-[var(--client-color)] text-[var(--client-color)] 
-										dark:border-[var(--client-color-dark)] dark:text-[var(--client-color-dark)] 
-										rounded-lg p-4 text-sm md:text-lg text-center 
-										w-[50vw] md:w-[30vw] max-w-[300px] h-[70px] md:h-[100px] flex-shrink-0"
+							{featuresStates.pluginsTitleOption && (
+								<h1 className="text-center mb-6 text-lg md:text-2xl font-bold text-neutral-800 dark:text-neutral-200">
+									{pluginsTitle}
+								</h1>
+							)}
+							{/* Display dos plugins */}
+							{activedPlugin === null && (pluginRequestData?.NumberOfPlugins ?? 0) > 1 && (
+								<div className="flex flex-col md:flex-row md:flex-wrap gap-2 p-2 md:p-4
+									items-center md:items-start justify-start md:justify-center
+									bg-neutral-100 dark:bg-neutral-900 border-neutral-400 dark:border-neutral-600
+									max-h-[calc(100vh-16rem)] md:max-w-[calc(100vw-20rem)] overflow-y-auto md:overflow-visible
+									[&::-webkit-scrollbar]:w-2
+									[&::-webkit-scrollbar-track]:rounded-full
+									[&::-webkit-scrollbar-track]:bg-[#d0d0d0]/20
+									dark:[&::-webkit-scrollbar-track]:bg-[#414141]/20
+									[&::-webkit-scrollbar-thumb]:rounded-full
+									[&::-webkit-scrollbar-thumb]:bg-[#d0d0d0]
+									dark:[&::-webkit-scrollbar-thumb]:bg-[#414141]
+									[&::-webkit-scrollbar-thumb]:hover:bg-[#acabab]
+									dark:[&::-webkit-scrollbar-thumb]:hover:bg-[#2a2a2a]"
 								>
-									{plugin.PluginTitle}
-								</button>
-							))}
+									{pluginRequestData?.PluginList.map((plugin, index) => (
+										<button
+											key={index}
+											onClick={() => {
+												setActivedPlugin(plugin);
+												setInputEnable(true);
+												setPluginType(plugin.PluginType);
+												setPluginKeys(plugin.PluginKeys);
+											}}
+											className="border border-[var(--client-color)] text-[var(--client-color)] 
+												dark:border-[var(--client-color-dark)] dark:text-[var(--client-color-dark)] 
+												rounded-lg p-4 text-sm md:text-lg text-center 
+												w-[50vw] md:w-[30vw] max-w-[300px] h-[70px] md:h-[100px] flex-shrink-0"
+										>
+											{plugin.PluginTitle}
+										</button>
+									))}
+								</div>
+							)}
+						</div>
+					))}
+					
+					{pluginType === 'files' && (	
+						<div className={`flex-grow h-[calc(100vh-5rem)] md:h-[calc(100vh-6rem)] p-4 flex items-center justify-center 
+							${isFilesSidebarOpen ? 'w-full' : ''}
+							`}>
+							<div className={`flex w-full h-full
+								${isFilesSidebarOpen ? 'justify-start' : 'justify-center'}
+								`}>
+								<div className={`bg-white dark:bg-neutral-800 shadow-lg text-center flex flex-grow top-0 overflow-hidden 
+									${isFilesSidebarOpen ? 'w-full' : 'max-w-5xl'}
+									`}>
+										<FilesProcessing 
+											activedPlugin={activedPlugin} setActivedPlugin={setActivedPlugin}
+											debugMode={debugMode} setDebugMode={setDebugMode}
+											isFilesSidebarOpen={isFilesSidebarOpen} setIsFilesSidebarOpen={setIsFilesSidebarOpen} 
+											selectedLanguage={language || 'en-US'}
+										/>
+								</div>
+							</div>
 						</div>
 					)}
-				</div>
-			))}
 
-			{pluginType === 'files' && (	
-				<div className={`flex-grow h-[calc(100vh-5rem)] md:h-[calc(100vh-6rem)] p-4 flex items-center justify-center 
-					${isFilesSidebarOpen ? 'w-full' : ''}
-					`}>
-					<div className={`flex w-full h-full
-						${isFilesSidebarOpen ? 'justify-start' : 'justify-center'}
-						`}>
-						<div className={`bg-white dark:bg-neutral-800 shadow-lg text-center flex flex-grow top-0 overflow-hidden 
-							${isFilesSidebarOpen ? 'w-full' : 'max-w-5xl'}
+					{pluginType === 'chatbot' && activedPlugin && (	
+						<div className={`flex-grow h-[calc(100vh-5rem)] md:h-[calc(100vh-6rem)] p-4 flex items-center justify-center 
+							${isChatSidebarOpen ? 'w-full' : ''}
 							`}>
-								<FilesProcessing 
-									activedPlugin={activedPlugin} setActivedPlugin={setActivedPlugin}
-									debugMode={debugMode} setDebugMode={setDebugMode}
-									isFilesSidebarOpen={isFilesSidebarOpen} setIsFilesSidebarOpen={setIsFilesSidebarOpen} 
-									selectedLanguage={language || 'en-US'}
-								/>
+							<div className={`flex w-full h-full 
+								${isChatSidebarOpen ? 'justify-start' : 'justify-center'}
+								`}>
+								<div className={`bg-white dark:bg-neutral-800 shadow-lg text-center flex flex-grow top-0 overflow-hidden 
+									${isChatSidebarOpen ? 'w-full' : 'max-w-5xl'}
+									`}> 
+									<ChatComponent 
+										activedPlugin={activedPlugin} setActivedPlugin={setActivedPlugin}
+										pluginKeys={pluginKeys} setPluginKeys={setPluginKeys}
+										inputEnable={inputEnable} setInputEnable={setInputEnable}
+										debugMode={debugMode} setDebugMode={setDebugMode}
+										isChatSidebarOpen={isChatSidebarOpen} setIsChatSidebarOpen={setIsChatSidebarOpen}
+										selectedLanguage={language || 'en-US'}
+										darkMode={darkMode}
+										autoAudioPlay={audioEnable}
+									/>
+								</div>
+							</div>
 						</div>
-					</div>
-				</div>
+					)}
+				</>
 			)}
 
-			{pluginType === 'chatbot' && activedPlugin && (	
-				<div className={`flex-grow h-[calc(100vh-5rem)] md:h-[calc(100vh-6rem)] p-4 flex items-center justify-center 
-					${isChatSidebarOpen ? 'w-full' : ''}
-					`}>
-					<div className={`flex w-full h-full 
-						${isChatSidebarOpen ? 'justify-start' : 'justify-center'}
-						`}>
-						<div className={`bg-white dark:bg-neutral-800 shadow-lg text-center flex flex-grow top-0 overflow-hidden 
-							${isChatSidebarOpen ? 'w-full' : 'max-w-5xl'}
-							`}> 
-							<ChatComponent 
-								activedPlugin={activedPlugin} setActivedPlugin={setActivedPlugin}
-								pluginKeys={pluginKeys} setPluginKeys={setPluginKeys}
-								inputEnable={inputEnable} setInputEnable={setInputEnable}
-								debugMode={debugMode} setDebugMode={setDebugMode}
-								isChatSidebarOpen={isChatSidebarOpen} setIsChatSidebarOpen={setIsChatSidebarOpen}
-								selectedLanguage={language || 'en-US'}
-								darkMode={darkMode}
-								autoAudioPlay={audioEnable}
-							/>
-						</div>
-					</div>
-				</div>
-			)}
+
 
 			{/* Sidebar */}
 			{showSidebar && (

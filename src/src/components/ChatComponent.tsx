@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useDebounce } from 'use-debounce';
 import * as sdk from "microsoft-cognitiveservices-speech-sdk";
 import { FaFileAlt, FaPause, FaPlay } from "react-icons/fa";
-import { FiImage, FiFile, FiX, FiSend, FiSlash, FiChevronDown, FiChevronUp, FiCheck, FiCopy, FiSidebar } from "react-icons/fi";
+import { FiImage, FiFile, FiX, FiSend, FiSlash, FiChevronDown, FiChevronUp, FiCheck, FiCopy, FiSidebar, FiLoader } from "react-icons/fi";
 import { AiOutlineLike, AiOutlineDislike, AiFillLike, AiFillDislike } from "react-icons/ai";
 import Modal from 'react-modal';
 import axios from 'axios';
@@ -187,9 +187,10 @@ function ChatComponent({
                 setIsLoading(false);
                 setInputEnable(false);
                 if (index < apiResponse.length) {
-                    // WITHOUT TYPING EFFECT: substitute bellow currentMessage = apiResponse
-                    // currentMessage += apiResponse[index];
-                    currentMessage = apiResponse;
+                    // WITHOUT TYPING EFFECT: currentMessage = apiResponse
+                    // WITH TYPING EFFECT: currentMessage += apiResponse[index]
+                    currentMessage += apiResponse[index];
+                    // currentMessage = apiResponse;
                     // Check if image URL exists
                     const botImage = response.data.bot_image ? [response.data.bot_image] : [];
                     setMessages(prevMessages => [
@@ -207,9 +208,10 @@ function ChatComponent({
                         },
                     ]);
                     // WITHOUT TYPING EFFECT: comment index and timeout bellow and uncomment setInputEnable
-                    // index++;
-                    // setTimeout(typingEffect, 0);
-                    setInputEnable(true);
+                    // WITH TYPING EFFECT: uncomment index and timeout bellow and comment setInputEnable
+                    index++;
+                    setTimeout(typingEffect, 0);
+                    // setInputEnable(true);
                 } else {
                     setInputEnable(true);
                     if (response.data.end_chat === "END_CHAT") {
@@ -1440,8 +1442,8 @@ function ChatComponent({
                         )}
                         {formTemplate?.fields && formTemplate.fields.length > 0 && !inputEnable && (
                             <div className="flex flex-col items-center justify-center py-4">
-                                <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-gray-500 dark:border-gray-400 mr-2"></div>
-                                <span className="w-full p-4 text-center italic text-gray-500 dark:text-gray-400">{loadingForm}</span>
+                                <FiLoader className="animate-spin spin-slow text-4xl text-neutral-600 dark:text-neutral-400 mb-4" />
+                                <span className="w-full p-4 text-center italic text-neutral-600 dark:text-neutral-400">{loadingForm}</span>
                             </div>
                         )}
 
