@@ -8,6 +8,7 @@ import axios from 'axios';
 import { MdMenu } from 'react-icons/md';
 import ChatComponent from './ChatComponent';
 import FilesProcessing from './FilesProcessing';
+import SearchComponent from './SearchComponent';
 import { fetchAndUpdateCSSVariables } from './cssUtils';
 
 type Language = {
@@ -36,7 +37,8 @@ function VirtualAssistent() {
 	const [title, setTitle] = useState<string>('');
 	const [_tabText, setTabText] = useState<string>('');
 	const [pluginsTitle, setPluginsTitle] = useState<string>('');
-	const [logo, setLogo] = useState<string>('');
+	const [lightLogo, setLightLogo] = useState<string>('');
+	const [darkLogo, setDarkLogo] = useState<string>('');
 	const [availableLanguages, setAvailableLanguages] = useState<Language[]>([]); // Dynamic languages
 	const [isConfigLoaded, setIsConfigLoaded] = useState<boolean>(false); // Track config load state
 	const [buttonLabels, setButtonLabels] = useState({
@@ -127,7 +129,6 @@ function VirtualAssistent() {
 				setActivedPlugin(plugins.PluginList[0]);
 				console.log(plugins.PluginList[0]); // new for seeing what the plugin contains
 				setInputEnable(true);
-				// plugins.PluginList[0].PluginType = 'chatbot';
 				setPluginType(plugins.PluginList[0].PluginType);
 				setPluginKeys(plugins.PluginList[0].PluginKeys);
 			} else if (plugins?.NumberOfPlugins > 1) {
@@ -135,6 +136,7 @@ function VirtualAssistent() {
 				console.log("Tenho mais que um plugin!", plugins.PluginList);
 				plugins.PluginList[0].PluginType = 'chatbot';
 				plugins.PluginList[1].PluginType = 'files';
+				plugins.PluginList[2].PluginType = 'search';
 			} else {
 				return;
 			}
@@ -169,7 +171,8 @@ function VirtualAssistent() {
 				}
 				setSetupApi(clientData.setupApi || '');
 				setInputEnable(clientData.inputEnable ?? true);
-				setLogo(clientData.logo || '');
+				setLightLogo(clientData.lightLogo || '');
+				setDarkLogo(clientData.darkLogo || '');
 				if (clientData.languages) {
 					setAvailableLanguages(clientData.languages);
 				}
@@ -281,7 +284,7 @@ function VirtualAssistent() {
 					{/* Logo */}
 					<div className="flex items-center min-w-0">
 						<img 
-							src={logo}
+							src={darkMode ? darkLogo : lightLogo}
 							className="h-[var(--logo-mobile-width)] md:h-[var(--logo-width)] flex-shrink-0"
 						/>
 					</div>
@@ -330,7 +333,7 @@ function VirtualAssistent() {
 									<div className="relative group">
 										<button
 											title={buttonLabels.languageSelectButton}
-											className={`flex items-center justify-center w-10 h-10 dark:bg-[#414141] dark:hover:bg-[#2a2a2a] text-neutral-500 dark:text-neutral-200 rounded-lg shadow-md focus:outline-none
+											className={`flex items-center justify-center w-10 h-10 dark:bg-[#414141] dark:hover:bg-[#2a2a2a] text-neutral-500 dark:text-neutral-200 rounded-full shadow-md focus:outline-none
 												${inputEnable ? 'bg-neutral-300 hover:bg-[#acabab]' : 'cursor-not-allowed bg-neutral-300 hover:bg-neutral-300 dark:hover:bg-[#414141]'}
 												${(!inputEnable || showLanguageSelection) ? 'cursor-not-allowed bg-neutral-300 hover:bg-neutral-300 dark:hover:bg-[#414141]' : ''}
 											`}
@@ -535,6 +538,26 @@ function VirtualAssistent() {
 								darkMode={darkMode}
 								autoAudioPlay={audioEnable}
 							/>
+						</div>
+					</div>
+				</div>
+			)}
+
+			{pluginType === 'search' && (	
+				<div className={`flex-grow h-[calc(100vh-5rem)] p-4 flex items-center justify-center 
+					${isFilesSidebarOpen ? 'w-full' : ''}
+					`}>
+					<div className={`flex w-full h-full
+						${isFilesSidebarOpen ? 'justify-start' : 'justify-center'}
+						`}>
+						<div className={`bg-white dark:bg-neutral-900 shadow-lg text-center flex flex-grow top-0 overflow-hidden 
+							${isFilesSidebarOpen ? 'w-full' : 'max-w-5xl'}
+							`}>
+								<SearchComponent
+									activedPlugin={activedPlugin} setActivedPlugin={setActivedPlugin}
+									pluginKeys={pluginKeys} setPluginKeys={setPluginKeys}
+									selectedLanguage={language || 'en-US'}
+								/>
 						</div>
 					</div>
 				</div>

@@ -22,7 +22,7 @@ interface Message {
     language: string;
     id: string;
     files?: File[];
-    images: string[]; // user-uploaded images
+    images?: string[]; // user-uploaded images
     bot_image?: string[]; // backend-generated images
     sender: 'user' | 'bot' | 'debug' | 'websocket';
     agent?: string;
@@ -65,9 +65,9 @@ type Template = {
 
 function ChatComponent({ 
     inputEnable, setInputEnable, 
-    debugMode, setDebugMode, 
+    debugMode, 
     isChatSidebarOpen, setIsChatSidebarOpen, 
-    activedPlugin, setActivedPlugin,
+    activedPlugin,
     pluginKeys,
     selectedLanguage, 
     darkMode, 
@@ -642,6 +642,10 @@ function ChatComponent({
     const chatPlaceholder = languageData?.chatPlaceholder?.[selectedLanguage] || languageData?.chatPlaceholder?.['en-US'];
     const uploadFilesButton = languageData?.uploadFilesButton?.[selectedLanguage] || languageData?.uploadFilesButton?.['en-US'];
     const uploadImagesButton = languageData?.uploadImagesButton?.[selectedLanguage] || languageData?.uploadImagesButton?.['en-US'];
+    const copyButton = languageData?.copyButton?.[selectedLanguage] || languageData?.uploadImagesButton?.['en-US'];
+    const analysisSidebarButton = languageData?.analysisSidebarButton?.[selectedLanguage] || languageData?.analysisSidebarButton?.['en-US'];
+    const likeButton = languageData?.likeButton?.[selectedLanguage] || languageData?.likeButton?.['en-US'];
+    const DislikeButton = languageData?.DislikeButton?.[selectedLanguage] || languageData?.DislikeButton?.['en-US'];
     const audioPlayButton = languageData?.audioPlayButton?.[selectedLanguage] || languageData?.audioPlayButton?.['en-US'];
     const audioPauseButton = languageData?.audioPauseButton?.[selectedLanguage] || languageData?.audioPauseButton?.['en-US'];
     const analysisTitle = languageData?.analysisTitle?.[selectedLanguage] || languageData?.analysisTitle?.['en-US'];    
@@ -841,6 +845,7 @@ function ChatComponent({
                                                 <div>
                                                     <button
                                                         onClick={() => {console.log("📎 Copy - message.id onClick:", message.id); copyToClipboard(message.text, message.id)}}
+                                                        title={copyButton}
                                                         className="w-6 h-6 text-black dark:text-white hover:text-neutral-700 dark:hover:text-neutral-300"
                                                     >
                                                         {copiedMessageId === message.id ? (
@@ -856,6 +861,7 @@ function ChatComponent({
                                                 <div>
                                                     <button
                                                         onClick={() => handleAnalysis()}
+                                                        title={analysisSidebarButton}
                                                         className="w-6 h-6 text-black dark:text-white hover:text-neutral-700 dark:hover:text-neutral-300"
                                                     >
                                                         <FiSidebar className="w-4 h-4" />
@@ -951,6 +957,7 @@ function ChatComponent({
                                                 <div className='flex'>
                                                     <button
                                                         onClick={() => handleFeedback(message.id, "like")}
+                                                        title={likeButton}
                                                         className="flex items-center justify-center w-5 h-5 mr-1
                                                             text-black dark:text-white hover:text-neutral-700 dark:hover:text-neutral-300"
                                                     >
@@ -962,6 +969,7 @@ function ChatComponent({
                                                     </button>
                                                     <button
                                                         onClick={() => handleFeedback(message.id, "dislike")}
+                                                        title={DislikeButton}
                                                         className="flex items-center justify-center w-5 h-5 mr-2
                                                             text-black dark:text-white hover:text-neutral-700 dark:hover:text-neutral-300"
                                                     >
@@ -1175,7 +1183,8 @@ function ChatComponent({
                                                 {/* Send button */}
                                                 <button 
                                                     className="rounded-full w-7 h-7 md:w-8 md:h-8 bg-black dark:bg-white text-white dark:text-black hover:bg-neutral-700 dark:hover:bg-neutral-300"
-                                                    onClick={handleSend}>
+                                                    onClick={handleSend}
+                                                >
                                                     <FiSend className='w-6 h-4 md:w-7 md:h-5 rotate-45 m-0 rounded-full'/>
                                                 </button>
                                             </div>

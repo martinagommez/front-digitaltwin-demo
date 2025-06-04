@@ -1,4 +1,60 @@
 {
+    "newChatButton": {
+        "pt-PT": "Novo Chat",
+        "en-US": "New Chat",
+        "es-ES": "Nuevo chat",
+        "fr-FR": "Nouvelle discussion",
+        "de-DE": "Neuer Chat",
+        "it-IT": "Nuova chat"
+    },
+    "darkModeButton": {
+        "pt-PT": "Modo Escuro",
+        "en-US": "Dark Mode",
+        "es-ES": "Modo oscuro",
+        "fr-FR": "Mode sombre",
+        "de-DE": "Dunkler Modus",
+        "it-IT": "Modalità scura"
+    },
+    "lightModeButton": {
+        "pt-PT": "Modo Claro",
+        "en-US": "Light Mode",
+        "es-ES": "Modo de luz",
+        "fr-FR": "Mode clair",
+        "de-DE": "Heller Modus",
+        "it-IT": "Modalità chiara"
+    },
+    "debugModeButton": {
+        "pt-PT": "Modo de Debug",
+        "en-US": "Debug Mode",
+        "es-ES": "Modo de Debug",
+        "fr-FR": "Mode Debug",
+        "de-DE": "Debug-Modus",
+        "it-IT": "Modalità Debug"
+    },
+    "autoAudioPlayButton": {
+        "pt-PT": "Reprodução Automática de Áudio",
+        "en-US": "Auto Audio Play",
+        "es-ES": "Reproducción Automática de Audio",
+        "fr-FR": "Lecture Audio Automatique",
+        "de-DE": "Automatische Audiowiedergabe",
+        "it-IT": "Riproduzione Automatica Audio"
+    },
+    "languageSelectButton": {
+        "pt-PT": "Selecionar Idioma",
+        "en-US": "Select Language",
+        "es-ES": "Seleccionar Idioma",
+        "fr-FR": "Sélectionner la langue",
+        "de-DE": "Sprache auswählen",
+        "it-IT": "Seleziona lingua"
+    },
+    "availableLanguagesTitle": {
+        "pt-PT": "Idiomas disponíveis",
+        "en-US": "Available languages",
+        "es-ES": "Idiomas disponibles",
+        "fr-FR": "Langues disponibles",
+        "de-DE": "Verfügbare Sprachen",
+        "it-IT": "Lingue disponibili"
+    },
     "endedText": {
         "pt-PT": "A sua sessão terminou",
         "en-US": "Your session has ended",
@@ -63,45 +119,37 @@
         "de-DE": "Aktualisieren",
         "it-IT": "Aggiorna"
     },
-    "newChatButton": {
-        "pt-PT": "Novo Chat",
-        "en-US": "New Chat",
-        "es-ES": "Nuevo chat",
-        "fr-FR": "Nouvelle discussion",
-        "de-DE": "Neuer Chat",
-        "it-IT": "Nuova chat"
+    "copyButton": {
+        "pt-PT": "Copiar texto",
+        "en-US": "Copy text",
+        "es-ES": "Copiar texto",
+        "fr-FR": "Copier le texte",
+        "de-DE": "Text kopieren",
+        "it-IT": "Copia il testo"
     },
-    "darkModeButton": {
-        "pt-PT": "Modo Escuro",
-        "en-US": "Dark Mode",
-        "es-ES": "Modo oscuro",
-        "fr-FR": "Mode sombre",
-        "de-DE": "Dunkler Modus",
-        "it-IT": "Modalità scura"
+    "analysisSidebarButton": {
+        "pt-PT": "Abrir painel de análise",
+        "en-US": "Open analysis panel",
+        "es-ES": "Abrir panel de análisis",
+        "fr-FR": "Ouvrir le panneau d'analyse",
+        "de-DE": "Analysebereich öffnen",
+        "it-IT": "Apri pannello di analisi"
     },
-    "lightModeButton": {
-        "pt-PT": "Modo Claro",
-        "en-US": "Light Mode",
-        "es-ES": "Modo de luz",
-        "fr-FR": "Mode clair",
-        "de-DE": "Heller Modus",
-        "it-IT": "Modalità chiara"
+    "likeButton": {
+        "pt-PT": "Gostar",
+        "en-US": "Like",
+        "es-ES": "Me gusta",
+        "fr-FR": "J'aime",
+        "de-DE": "Gefällt mir",
+        "it-IT": "Mi piace"
     },
-    "debugModeButton": {
-        "pt-PT": "Modo de Debug",
-        "en-US": "Debug Mode",
-        "es-ES": "Modo de Debug",
-        "fr-FR": "Mode Debug",
-        "de-DE": "Debug-Modus",
-        "it-IT": "Modalità Debug"
-    },
-    "autoAudioPlayButton": {
-        "pt-PT": "Reprodução Automática de Áudio",
-        "en-US": "Auto Audio Play",
-        "es-ES": "Reproducción Automática de Audio",
-        "fr-FR": "Lecture Audio Automatique",
-        "de-DE": "Automatische Audiowiedergabe",
-        "it-IT": "Riproduzione Automatica Audio"
+    "DislikeButton": {
+        "pt-PT": "Não gostar",
+        "en-US": "Dislike",
+        "es-ES": "No me gusta",
+        "fr-FR": "Je n'aime pas",
+        "de-DE": "Gefällt mir nicht",
+        "it-IT": "Non mi piace"
     },
     "audioPlayButton": {
         "pt-PT": "Reproduzir Áudio",
@@ -119,13 +167,13 @@
         "de-DE": "Audio Pausieren",
         "it-IT": "Pausa Audio"
     },
-    "languageSelectButton": {
-        "pt-PT": "Selecionar Idioma",
-        "en-US": "Select Language",
-        "es-ES": "Seleccionar Idioma",
-        "fr-FR": "Sélectionner la langue",
-        "de-DE": "Sprache auswählen",
-        "it-IT": "Seleziona lingua"
+    "audioRecordingButton": {
+        "pt-PT": "Começar gravação de áudio",
+        "en-US": "Start Audio Recording",
+        "es-ES": "Comenzar grabación de audio",
+        "fr-FR": "Commencer l'enregistrement audio",
+        "de-DE": "Audioaufnahme starten",
+        "it-IT": "Inizia registrazione audio"
     },
     "uploadFilesButton": {
         "pt-PT": "Carregar ficheiros",
@@ -143,14 +191,6 @@
         "de-DE": "Bilder hochladen",
         "it-IT": "Carica immagini"
     },
-    "audioRecordingButton": {
-        "pt-PT": "Começar gravação de áudio",
-        "en-US": "Start Audio Recording",
-        "es-ES": "Comenzar grabación de audio",
-        "fr-FR": "Commencer l'enregistrement audio",
-        "de-DE": "Audioaufnahme starten",
-        "it-IT": "Inizia registrazione audio"
-    },
     "chatPlaceholder": {
         "pt-PT": "Escreva aqui a sua mensagem...",
         "en-US": "Write your message here...",
@@ -158,14 +198,6 @@
         "fr-FR": "Écrivez votre message ici...",
         "de-DE": "Schreiben Sie Ihre Nachricht hier...",
         "it-IT": "Scrivi qui il tuo messaggio..."
-    },
-    "availableLanguagesTitle": {
-        "pt-PT": "Idiomas disponíveis",
-        "en-US": "Available languages",
-        "es-ES": "Idiomas disponibles",
-        "fr-FR": "Langues disponibles",
-        "de-DE": "Verfügbare Sprachen",
-        "it-IT": "Lingue disponibili"
     },
     "analysisTitle": {
         "pt-PT": "Análise da Conversa",
@@ -302,5 +334,45 @@
         "fr-FR": "Aperçu non pris en charge pour ce type de fichier.",
         "de-DE": "Vorschau für diesen Dateityp nicht unterstützt.",
         "it-IT": "Anteprima non supportata per questo tipo di file."
+    },
+    "searchPlaceholder": {
+        "pt-PT": "O que está à procura?",
+        "en-US": "What are you searching for?",
+        "es-ES": "¿Qué estás buscando?",
+        "fr-FR": "Que recherchez-vous ?",
+        "de-DE": "Wonach suchen Sie?",
+        "it-IT": "Cosa stai cercando?"
+    },
+    "outputPlaceholder": {
+        "pt-PT": "A sua pesquisa aparecerá aqui.",
+        "en-US": "Your search will appear here.",
+        "es-ES": "Tu búsqueda aparecerá aquí.",
+        "fr-FR": "Votre recherche apparaîtra ici.",
+        "de-DE": "Ihre Suche wird hier angezeigt.",
+        "it-IT": "La tua ricerca apparirà qui."
+    },
+    "noOutput": {
+        "pt-PT": "Não foram encontrados resultados para",
+        "en-US": "There were no results found for",
+        "es-ES": "No se encontraron resultados para",
+        "fr-FR": "Aucun résultat trouvé pour",
+        "de-DE": "Es wurden keine Ergebnisse gefunden für",
+        "it-IT": "Nessun risultato trovato per"
+    },
+    "searchButton": {
+        "pt-PT": "Pesquisar",
+        "en-US": "Search",
+        "es-ES": "Buscar",
+        "fr-FR": "Rechercher",
+        "de-DE": "Suchen",
+        "it-IT": "Cerca"
+    },
+    "newSearchButton": {
+        "pt-PT": "Atualizar para nova pesquisa",
+        "en-US": "Refresh for new search",
+        "es-ES": "Actualizar para una nueva búsqueda",
+        "fr-FR": "Actualiser pour une nouvelle recherche",
+        "de-DE": "Aktualisieren für neue Suche",
+        "it-IT": "Aggiorna per una nuova ricerca"
     }
 }
