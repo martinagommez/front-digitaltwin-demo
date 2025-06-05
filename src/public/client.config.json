@@ -26,7 +26,7 @@
         "isThoughtProcess": true,
         "isSupportingContent": true,
         "isCitations": true,
-        "enableLanguages": true,
+        "enableLanguages": false,
         "browserLanguage": false,
         "preferenceLanguage": true,
         "enableFiles": true,
