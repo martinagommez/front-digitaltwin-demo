@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useDebounce } from 'use-debounce';
 import * as sdk from "microsoft-cognitiveservices-speech-sdk";
 import { FaFileAlt, FaPause, FaPlay } from "react-icons/fa";
-import { FiImage, FiFile, FiX, FiSend, FiSlash, FiChevronDown, FiChevronUp, FiCheck, FiCopy, FiSidebar } from "react-icons/fi";
+import { FiImage, FiFile, FiX, FiSend, FiSlash, FiChevronDown, FiChevronUp, FiCheck, FiCopy, FiSidebar, FiLoader } from "react-icons/fi";
+import { AiOutlineLike, AiOutlineDislike, AiFillLike, AiFillDislike } from "react-icons/ai";
 import Modal from 'react-modal';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
@@ -21,12 +22,15 @@ interface Message {
     language: string;
     id: string;
     files?: File[];
-    images?: string[];
+    images: string[]; // user-uploaded images
+    bot_image?: string[]; // backend-generated images
     sender: 'user' | 'bot' | 'debug' | 'websocket';
     agent?: string;
     orch_config_id: string|undefined;
     orch_config_key: string|undefined;
-    formFields?: Record<string, string>; 
+    formFields?: Record<string, string | string[]>;
+    formFieldLabels?: Record<string, string>; 
+    formFieldOptions?: Record<string, { label: string; value: string }[]>;
 };
 
 interface ChatComponentProps {
@@ -47,14 +51,16 @@ interface ChatComponentProps {
 
 type FormField = {
     label: string;
-    type: string; // 'text', 'textarea', etc.
+    type: string; // 'text', 'textarea', 'select', 'multiselect', etc.
     name: string;
     placeholder?: string;
+    latest_value?: string;
+    options?: { label: string; value: string }[]; 
 };
 
 type Template = {
-    title: string;
-    fields: (FormField | { title: string; fields: FormField[] })[]; // handle single fields and grouped fields
+    title?: string;
+    fields?: (FormField | { title: string; fields: FormField[] })[]; // handle single fields and grouped fields
 };
 
 function ChatComponent({ 
@@ -69,6 +75,8 @@ function ChatComponent({
 }: ChatComponentProps) {
     const [inputText, setInputText] = useState<string>('');
     const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+    const [messageFeedback, setMessageFeedback] = useState<{ [id: string]: "like" | "dislike" | null }>({});
+	const [feedbackApi, setFeedbackApi] = useState<string>('');
     const [messages, setMessages] = useState<Message[]>([]);
     const [playingMessageId, setPlayingMessageId] = useState<string | null>(null);
     const [isUserAtBottom, setIsUserAtBottom] = useState<boolean>(true);
@@ -83,9 +91,8 @@ function ChatComponent({
     const [imagePreviews, setImagePreviews] = useState<string[]>([]);
     const [isConfigLoaded, setIsConfigLoaded] = useState<boolean>(false);
     const [answer, setAnswer] = useState<ChatAppResponse | null>(null);
-    const [templateForm, setTemplateForm] = useState<boolean>(false);
     const [formTemplate, setFormTemplate] = useState<Template | null>(null);
-    const [formValues, setFormValues] = useState<Record<string, string>>({});
+    const [formValues, setFormValues] = useState<Record<string, string | string[]>>({});
     const [formError, setFormError] = useState<boolean>(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const imageInputRef = useRef<HTMLInputElement>(null);
@@ -124,53 +131,6 @@ function ChatComponent({
         }
     };
 
-    const exampleTemplate: Template = {
-        title: 'User Feedback Form',
-        fields: [
-        {
-            title: 'Orchestration',
-            fields: [
-                {
-                    label: 'Orchestration Name',
-                    type: 'text',
-                    name: 'OrchestrationName',
-                    placeholder: "Your orchestration's name",
-                },
-                {
-                    label: 'Orchestration Description',
-                    type: 'textarea',
-                    name: 'OrchestrationDescription',
-                    placeholder: "Your orchestration's description",
-                },
-                {
-                    label: 'Orchestration Type',
-                    type: 'textarea',
-                    name: 'OrchestrationType',
-                    placeholder: "Your orchestration's type",
-                },
-            ],
-        },
-        {
-            label: 'Agent Name',
-            type: 'text',
-            name: 'AgentName',
-            placeholder: "Your agent's name",
-        },
-        {
-            label: 'Intent',
-            type: 'text',
-            name: 'Intent',
-            placeholder: "Your agent's functionality",
-        },
-        {
-            label: 'System Prompt',
-            type: 'textarea',
-            name: 'SystemPrompt',
-            placeholder: "Your agent's behavior prompt",
-        },
-        ]
-    }
-
     useEffect(() => {
         console.log("Setting answer:", exampleAnswer);
         setAnswer(exampleAnswer);
@@ -204,7 +164,6 @@ function ChatComponent({
             for (const pair of formData.entries()) {
                 console.log("   ➤", pair[0], pair[1]);
             }
-
             const response = await axios.post(url + "/message", formData, {
                 headers: {
                     "Content-Type": "multipart/form-data",
@@ -212,51 +171,47 @@ function ChatComponent({
                 }, timeout: 10000000
             });
             console.log("Response from backend", response);
-
             const apiResponse = response.data.response;
             setSessionId(response.data.session_id);
             setToken(response.data.token);
-
-            // if (response.data.template) {
-            //     setTemplateForm(true);
-            //     setFormTemplate(response.data.template);
-            //     console.log("Form Template set from backend:", response.data.template);
-            // } else {
-            //     setTemplateForm(false); // no template in this response
-            // }
-
-            if (true) { // temporary mock for testing
-                setTemplateForm(true);
-                setFormTemplate(exampleTemplate);
-                console.log("Mock Form Template set:", exampleTemplate);
-            }            
-
+            setFormTemplate(response.data.template_fields);
+            // setFormTemplate(exampleTemplate);
+            setIsConfigLoaded(true);
+            console.log("Form Template set from backend:", response.data.template_fields);
             // const data: ChatAppResponse = await response.data;
             // setAnswer(data);
             // console.log("Setting answer:", data);
-
             let currentMessage = '';
             let index = 0;
             const typingEffect = () => {
                 setIsLoading(false);
                 setInputEnable(false);
                 if (index < apiResponse.length) {
+                    // WITHOUT TYPING EFFECT: currentMessage = apiResponse
+                    // WITH TYPING EFFECT: currentMessage += apiResponse[index]
                     currentMessage += apiResponse[index];
+                    // currentMessage = apiResponse;
+                    // Check if image URL exists
+                    const botImage = response.data.bot_image ? [response.data.bot_image] : [];
                     setMessages(prevMessages => [
                         ...prevMessages.slice(0, -1),
                         { 
                             text: currentMessage, 
                             language: selectedLanguage, 
-                            id: new Date().getTime().toString(), 
+                            id: messageId, 
                             files: [], 
-                            images: [], 
+                            images: [],
+                            bot_image: botImage,
                             sender: 'bot',
                             orch_config_id: pluginKeys!.orch_config_id, 
                             orch_config_key: pluginKeys!.orch_config_key
                         },
                     ]);
+                    // WITHOUT TYPING EFFECT: comment index and timeout bellow and uncomment setInputEnable
+                    // WITH TYPING EFFECT: uncomment index and timeout bellow and comment setInputEnable
                     index++;
-                    setTimeout(typingEffect, 5);
+                    setTimeout(typingEffect, 0);
+                    // setInputEnable(true);
                 } else {
                     setInputEnable(true);
                     if (response.data.end_chat === "END_CHAT") {
@@ -265,19 +220,22 @@ function ChatComponent({
                     }
                 }
             };
+            const messageId = new Date().getTime().toString();
             setMessages(prevMessages => [
                 ...prevMessages,
                 { 
                     text: '', 
                     language: selectedLanguage, 
-                    id: new Date().getTime().toString(), 
+                    id: messageId, 
                     files: [], 
                     images: [], 
+                    bot_image: [],
                     sender: 'bot',
                     orch_config_id: pluginKeys!.orch_config_id, 
                     orch_config_key: pluginKeys!.orch_config_key
                 },
             ]);
+            console.log("messageId from fetch message", messageId);
             setInputEnable(false);
             typingEffect();
             if (response.data.authentication === "AUTHENTICATION_FAILED") {
@@ -305,22 +263,64 @@ function ChatComponent({
     };
 
     useEffect(() => {
-        // Mock setting template, in a real scenario, you would fetch it from the backend
-        setFormTemplate(exampleTemplate);
-        setTemplateForm(true); // Make sure the form displays when template is loaded
-    }, []);
+        console.log("Form Template set (effect):", formTemplate);
+        console.log("Is Config Loaded (effect):", isConfigLoaded);
+    }, [formTemplate, isConfigLoaded]);
 
-    const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    useEffect(() => {
+        if (!formTemplate || !formTemplate.fields) return;
+        // Flatten any nested field groups (if your template structure supports groups)
+        const allFields = formTemplate.fields.flatMap(field =>
+            'fields' in field ? field.fields : [field]
+        );
+        // Build initial values from latest_value
+        const initialValues: Record<string, string | string[]> = {};
+        allFields.forEach((field) => {
+            if (field.latest_value !== undefined) {
+                if (field.type === 'multiselect') {
+                    // Ensure multiselect values are stored as arrays
+                    initialValues[field.name] = Array.isArray(field.latest_value)
+                        ? field.latest_value
+                        : String(field.latest_value).split(',').map(val => val.trim());
+                } else {
+                    initialValues[field.name] = String(field.latest_value);
+                }
+            }
+        });
+
+        // Update formValues
+        setFormValues(initialValues);
+    }, [formTemplate]);
+
+    const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormValues(prev => ({ ...prev, [name]: value }));
     };
 
     const handleFormSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const allFields = formTemplate!.fields.flatMap(field =>
+        if (!formTemplate || !formTemplate.fields) {
+            console.error("Form template or its fields are undefined");
+            return;
+        }
+        const allFields = formTemplate.fields.flatMap(field =>
             'fields' in field ? field.fields : [field]
         );
-        const missingFields = allFields.filter(f => !formValues[f.name]?.trim());
+        // Build name-to-label mapping
+        const fieldLabels = Object.fromEntries(
+            allFields.map(f => [f.name, f.label || f.name])
+        );
+        const fieldOptions = Object.fromEntries(
+            allFields.map(f => [f.name, f.options || []])
+        );
+        // Check for missing required fields
+        const missingFields = allFields.filter(f => {
+            const value = formValues[f.name];
+            if (Array.isArray(value)) {
+                return value.length === 0; // multiselect: no option selected
+            }
+            return !value?.trim(); // string: empty or whitespace only
+        });
         if (missingFields.length > 0) {
             setFormError(true);
             return;
@@ -339,36 +339,46 @@ function ChatComponent({
                 images: [],
                 orch_config_id: pluginKeys!.orch_config_id,
                 orch_config_key: pluginKeys!.orch_config_key,
-                formFields: formValues
+                formFields: formValues,
+                formFieldLabels: fieldLabels,
+                formFieldOptions: fieldOptions
             }
         ]);
         // Reset the form
         setFormTemplate(null);
+        setIsConfigLoaded(false);
         setFormValues({});
+        const messageId = new Date().getTime().toString();
         const formData = new FormData();
         // Add keys expected by fetchMessage
         formData.append("user_input", inputText || "");
         formData.append("timestamp", getFormattedTimestamp());
+        formData.append("messageId", messageId);
         formData.append("session_id", sessionId);
         formData.append("token", token);
         formData.append("language", selectedLanguage);
         formData.append("body", "")
         formData.append("orch_config_id", pluginKeys!.orch_config_id);
         formData.append("orch_config_key", pluginKeys!.orch_config_key);
-        // 👉 Convert formValues to FormData and call fetchMessage
-        for (const key in formValues) {
-            formData.append(key, formValues[key]);
-        }
+        // Create structured array of { name, answer } and send as one field
+        const formattedTemplateFields = Object.entries(formValues).map(([name, answer]) => ({
+            [name]:answer
+        }));
+        formData.append("template_fields", JSON.stringify(formattedTemplateFields));
         await fetchMessage(formData);
         console.log("Handle Form Send", formData);
     };
 
     // Envio da mensagem
     const handleSend = async () => {
-        if (!inputText.trim()) return;
+        const hasText = (inputText.trim()).length > 0;
+        const hasAttachments = uploadedFiles.length > 0 || uploadedImages.length > 0;
+        if (!hasText && !hasAttachments) return;
+        const messageId = new Date().getTime().toString();
         const formData = new FormData();
         formData.append("user_input", inputText || "");
         formData.append("timestamp", getFormattedTimestamp());
+        formData.append("messageId", messageId);
         formData.append("session_id", sessionId);
         formData.append("token", token);
         formData.append("language", selectedLanguage);
@@ -389,7 +399,7 @@ function ChatComponent({
             { 
                 text: inputText, 
                 language: selectedLanguage, 
-                id: '', 
+                id: messageId, 
                 files: uploadedFiles, 
                 images: imagePreviews,
                 sender: "user",
@@ -415,6 +425,33 @@ function ChatComponent({
         } catch (error) {
             console.error("Failed to copy:", error);
         }
+    };
+
+    const sendFeedbackToBackend = async (messageId: string, feedback: "like" | "dislike" | null) => {
+        try {
+            await fetch(feedbackApi, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ messageId, feedback }),
+            });
+        } catch (error) {
+            console.error("Error sending feedback:", error);
+        }
+    };
+
+    const handleFeedback = (messageId: string, type: "like" | "dislike") => {
+        setMessageFeedback(prev => {
+            const current = prev[messageId];
+            let updatedType: "like" | "dislike" | null;
+            if (current === type) {
+                updatedType = null; // Deselect if already selected
+            } else {
+                updatedType = type; // Set the new type
+            }
+            // Send to backend
+            sendFeedbackToBackend(messageId, updatedType);
+            return { ...prev, [messageId]: updatedType };
+        });
     };
 
     const handleAnalysis = async () => {
@@ -609,7 +646,8 @@ function ChatComponent({
     const uploadImagesButton = languageData?.uploadImagesButton?.[selectedLanguage] || languageData?.uploadImagesButton?.['en-US'];
     const audioPlayButton = languageData?.audioPlayButton?.[selectedLanguage] || languageData?.audioPlayButton?.['en-US'];
     const audioPauseButton = languageData?.audioPauseButton?.[selectedLanguage] || languageData?.audioPauseButton?.['en-US'];
-    const analysisTitle = languageData?.analysisTitle?.[selectedLanguage] || languageData?.analysisTitle?.['en-US'];
+    const analysisTitle = languageData?.analysisTitle?.[selectedLanguage] || languageData?.analysisTitle?.['en-US'];    
+    const loadingForm = languageData?.loadingForm?.[selectedLanguage] || languageData?.loadingForm?.['en-US'];
     const submitForm = languageData?.submitForm?.[selectedLanguage] || languageData?.submitForm?.['en-US'];
     const submitFormError = languageData?.submitFormError?.[selectedLanguage] || languageData?.submitFormError?.['en-US'];
 
@@ -622,6 +660,11 @@ function ChatComponent({
         enableEndedNotification: true,
         enableEndedPopup: false,
         displayAgents: true,
+        enableFeedback: true,
+        enableAudio: true,
+        enableCopy: true,
+        enableAnalysis: false
+
 	});
 
     // Update das features com os valores alterados no json
@@ -639,14 +682,20 @@ function ChatComponent({
                         enableEndedNotification: data.enableFeatures.enableEndedNotification ?? true,
                         enableEndedPopup: data.enableFeatures.enableEndedPopup ?? false,
                         displayAgents: data.enableFeatures.displayAgents ?? true,
+                        enableFeedback: data.enableFeatures.enableFeedback ?? true,
+                        enableAudio: data.enableFeatures.enableAudio ?? true,
+                        enableCopy: data.enableFeatures.enableCopy ?? true,
+                        enableAnalysis: data.enableFeatures.enableAnalysis ?? false
+
 					});
 				}
-                // setSetupApi(data.setupApi || '');
+                setFeedbackApi(data.feedbackApi || '');
                 console.log('Language Data:', data);
 			} catch (error) {
 				console.error('Error fetching button states:', error);
 			} finally {
 				setIsConfigLoaded(true); // Mark as loaded
+                console.log("Is config loaded:", isConfigLoaded)
 			}
 		};
 		updateFeaturesStates();
@@ -657,13 +706,11 @@ function ChatComponent({
     useEffect(() => {
         const chatContainer = chatContainerRef.current;
         if (!chatContainer) return;
-
         const handleScroll = () => {
             const isAtBottom =
                 chatContainer.scrollHeight - chatContainer.scrollTop <= chatContainer.clientHeight + 10;
             setIsUserAtBottom(isAtBottom);
         };
-
         chatContainer.addEventListener("scroll", handleScroll);
         return () => chatContainer.removeEventListener("scroll", handleScroll);
     }, []);
@@ -712,10 +759,16 @@ function ChatComponent({
         }
     }, [inputText]); // Runs every time inputText changes (including speech-to-text updates)
 
+    useEffect(() => {
+        if (inputEnable) {
+            textAreaRef.current?.focus();
+        }
+    }, [inputEnable]);
+
     return (
         <div className="flex flex-col md:flex-row w-full h-full"> {/* Main flex container */}
             {/* Main UI */}
-            <div className={`${isChatSidebarOpen ? "w-full h-1/2 md:w-1/2 md:h-full" : "w-full h-full"} flex flex-col bg-white dark:bg-neutral-800 rounded-lg`}>
+            <div className={`${isChatSidebarOpen ? "w-full h-1/2 md:w-2/3 md:h-full" : "w-full h-full"} flex flex-col bg-white dark:bg-neutral-800 rounded-lg`}>
                 {/* Scroll-bar do chat */}
                 <div 
                     ref={chatContainerRef}
@@ -773,57 +826,97 @@ function ChatComponent({
                                 <div
                                     className={`relative inline-block pr-4 pl-4 pb-2 rounded-3xl ${
                                         message.sender === "user"
-                                            ? "bg-[var(--client-color)] dark:bg-[var(--client-color-dark)] text-white pt-4"
+                                            ? "bg-[var(--client-color)] dark:bg-[var(--client-color-dark)] text-white pt-3 text-xs"
                                             : message.sender === "debug"
-                                            ? "bg-yellow-200 dark:bg-yellow-800 text-black dark:text-white pt-10"
-                                            : "bg-neutral-200 text-black dark:bg-neutral-900 dark:text-white pt-10"
+                                            ? "bg-yellow-200 dark:bg-yellow-800 text-black dark:text-white pt-10 text-xs"
+                                            : "bg-neutral-200 text-black dark:bg-neutral-900 dark:text-white pt-10 text-xs"
                                     }`}
                                 >
-                                    <div
-                                        className={`absolute flex flex-row items-center justify-between p-1 top-3 right-3
-                                            ${message.sender === 'user' ? 'hidden' : 'justify-end'}
-                                            `}
-                                    >
-                                        {/* Copy Button */}
-                                        <button
-                                            onClick={() => copyToClipboard(message.text, message.id)}
-                                            className="w-6 h-6 text-black dark:text-white hover:text-neutral-700 dark:hover:text-neutral-300"
+                                    {!(index === messages.length - 1 && !inputEnable) && (
+                                        <div
+                                            className={`absolute flex flex-row items-center justify-between p-1 top-3 right-3
+                                                ${message.sender === 'user' ? 'hidden' : 'justify-end'}
+                                                `}
                                         >
-                                            {copiedMessageId === message.id ? (
-                                                <FiCheck className="w-4 h-4" />
-                                            ) : (
-                                                <FiCopy className="w-4 h-4" />
+                                            {/* Copy Button */}
+                                            {featuresStates.enableCopy && (
+                                                <div>
+                                                    <button
+                                                        onClick={() => {console.log("📎 Copy - message.id onClick:", message.id); copyToClipboard(message.text, message.id)}}
+                                                        className="w-6 h-6 text-black dark:text-white hover:text-neutral-700 dark:hover:text-neutral-300"
+                                                    >
+                                                        {copiedMessageId === message.id ? (
+                                                            <FiCheck className="w-4 h-4" />
+                                                        ) : (
+                                                            <FiCopy className="w-4 h-4" />
+                                                        )}
+                                                    </button>
+                                                </div>
                                             )}
-                                        </button>
-                                        {/* Analysis Sidebar Button */}
-                                        <button
-                                            onClick={() => handleAnalysis()}
-                                            className="w-6 h-6 text-black dark:text-white hover:text-neutral-700 dark:hover:text-neutral-300"
-                                        >
-                                            <FiSidebar className="w-4 h-4" />
-                                        </button>
-                                    </div>
+                                            {/* Analysis Sidebar Button */}
+                                            {featuresStates.enableAnalysis && (
+                                                <div>
+                                                    <button
+                                                        onClick={() => handleAnalysis()}
+                                                        className="w-6 h-6 text-black dark:text-white hover:text-neutral-700 dark:hover:text-neutral-300"
+                                                    >
+                                                        <FiSidebar className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            )}
+
+                                        </div>
+                                    )}
 
                                     {/* Message Text */}
                                     {message.formFields ? (
                                         <div className="text-left">
-                                            {Object.entries(message.formFields).map(([key, value]) => (
-                                                <div key={key} className="mb-1">
-                                                    <span className="font-bold">{key}: </span>
-                                                    <span className="whitespace-pre-wrap">{value}</span>
+                                            {Object.entries(message.formFields).map(([key, value]) => {
+                                                const label = message.formFieldLabels?.[key] || key;
+                                                const options = message.formFieldOptions?.[key] || [];
+                                                const renderValue = () => {
+                                                    if (Array.isArray(value)) {
+                                                        return value
+                                                            .map((val) => options.find((opt) => opt.value === val)?.label || val)
+                                                            .join(', ');
+                                                    } else {
+                                                        return options.find((opt) => opt.value === value)?.label || value;
+                                                    }
+                                                };
+                                                return (
+                                                    <div key={key} className="mb-1">
+                                                    <span className="font-bold">{label}:</span>
+                                                    <span className="whitespace-pre-wrap"> {renderValue()}</span>
+                                                    </div>
+                                                );
+                                                })}
+                                        </div>
+                                        ) : (
+                                            // Regular markdown-rendered message
+                                            <div className="markdown">
+                                                <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
+                                                    {message.text}
+                                                </ReactMarkdown>
+                                            </div>
+                                    )}
+
+                                    {/* Display bot-sent images in chat area*/}
+                                    {message.bot_image && message.bot_image.length > 0 && (
+                                        <div className="w-56 h-auto">
+                                            {message.bot_image.map((bot_image, i: number) => (
+                                                <div key={i} className="flex flex-col items-start bg-neutral-100 dark:bg-neutral-800 p-2 m-4">
+                                                    <img
+                                                        src={bot_image}
+                                                        alt={`AI generated image ${i}`}
+                                                        className="rounded-md border border-gray-300 dark:border-gray-700"
+                                                    />
+                                                    <span className="text-xs text-gray-500 mb-1">AI generated image</span>
                                                 </div>
                                             ))}
                                         </div>
-                                    ) : (
-                                        // Regular markdown-rendered message
-                                        <div className="markdown">
-                                            <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
-                                                {message.text}
-                                            </ReactMarkdown>
-                                        </div>
                                     )}
 
-                                    {/* Display sent images in chat area */}
+                                    {/* Display user-sent images in chat area */}
                                     {message.images && message.images.length > 0 && (
                                         <div className="w-56 h-auto">
                                             {message.images.map((image, i: number) => (
@@ -837,12 +930,12 @@ function ChatComponent({
                                         </div>
                                     )}
 
-                                    {/* Display sent files in chat area */}
+                                    {/* Display user-sent files in chat area */}
                                     {message.files && message.files.length > 0 && (
                                         <div className="w-64 h-auto">
                                             {message.files.map((file: { name: string; size: number }, i: number) => (
                                                 <div key={i} className="flex flex-row items-center bg-white dark:bg-neutral-800 p-2 m-4 rounded-md">
-                                                    <FaFileAlt className="text-4xl text-neutral-600 dark:text-white flex-shrink-0" />
+                                                    <FaFileAlt className="text-3xl mr-2 text-neutral-600 dark:text-white flex-shrink-0" />
                                                     <div className="flex flex-col w-full text-left overflow-hidden">
                                                         <span className="text-sm text-black dark:text-white truncate w-full">{file.name}</span>
                                                         <span className="text-xs font-sans text-neutral-800 dark:text-neutral-300">{file.size} bytes</span>
@@ -852,21 +945,53 @@ function ChatComponent({
                                         </div>
                                     )}
 
-                                    {/* Audio Button for each message */}
-                                    {message.text && (
+                                    {/* Buttons for each message: Like, Dislike and Audio*/}
+                                    {message.text && !(index === messages.length - 1 && !inputEnable) && (
                                         <div key={message.id} className={`flex ${message.sender === 'user' ? 'hidden' : 'justify-start'}`}>
-                                            <button
-                                                title={playingMessageId === message.id ? audioPauseButton : audioPlayButton}
-                                                onClick={() => {console.log("🎵 message.id in onClick:", message.id); playChatbotResponse(message.text, message.id);}}
-                                                className="flex items-center justify-center rounded-full w-5 h-5 md:w-6 md:h-6 mb-2 
-                                                    bg-black dark:bg-white text-white dark:text-black hover:bg-neutral-700 dark:hover:bg-neutral-300"
-                                            >
-                                                {playingMessageId === message.id ? (
-                                                    <FaPause className="w-[10px] h-[10px] md:w-3 md:h-3" />
-                                                ) : (
-                                                    <FaPlay className="w-[10px] h-[10px] md:w-3 md:h-3" />
-                                                )}
-                                            </button>
+                                            {/* Feedback buttons */}
+                                            {featuresStates.enableFeedback && (
+                                                <div className='flex'>
+                                                    <button
+                                                        onClick={() => handleFeedback(message.id, "like")}
+                                                        className="flex items-center justify-center w-5 h-5 mr-1
+                                                            text-black dark:text-white hover:text-neutral-700 dark:hover:text-neutral-300"
+                                                    >
+                                                        {messageFeedback[message.id] === "like" ? (
+                                                            <AiFillLike className="w-5 h-5" />
+                                                        ) : (
+                                                            <AiOutlineLike className="w-5 h-5" />
+                                                        )}
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleFeedback(message.id, "dislike")}
+                                                        className="flex items-center justify-center w-5 h-5 mr-2
+                                                            text-black dark:text-white hover:text-neutral-700 dark:hover:text-neutral-300"
+                                                    >
+                                                        {messageFeedback[message.id] === "dislike" ? (
+                                                            <AiFillDislike className="w-5 h-5" />
+                                                        ) : (
+                                                            <AiOutlineDislike className="w-5 h-5" />
+                                                        )}
+                                                    </button>
+                                                </div>
+                                            )}
+                                            {/* Play audio button */}
+                                            {featuresStates.enableAudio && (
+                                                <div>
+                                                    <button
+                                                        title={playingMessageId === message.id ? audioPauseButton : audioPlayButton}
+                                                        onClick={() => {console.log("🎵 Play/Pause - message.id onClick:", message.id); playChatbotResponse(message.text, message.id);}}
+                                                        className="flex items-center justify-center rounded-full w-5 h-5 mb-2 
+                                                            bg-black dark:bg-white text-neutral-200 dark:text-neutral-900 hover:bg-neutral-700 dark:hover:bg-neutral-300"
+                                                    >
+                                                        {playingMessageId === message.id ? (
+                                                            <FaPause className="w-[10px] h-[10px] ml-[1px]" />
+                                                        ) : (
+                                                            <FaPlay className="w-[10px] h-[10px] ml-[1px]" />
+                                                        )}
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -879,9 +1004,9 @@ function ChatComponent({
                         <div className="mb-4 text-left">
                             <div className="inline-block p-4 rounded-3xl bg-neutral-200 text-black dark:bg-neutral-700 dark:text-white">
                                 <div className="flex items-center">
-                                    <div className="animate-pulse h-4 w-4 bg-neutral-300 rounded-full mr-2"></div>
-                                    <div className="animate-pulse h-4 w-4 bg-neutral-300 rounded-full mr-2"></div>
-                                    <div className="animate-pulse h-4 w-4 bg-neutral-300 rounded-full"></div>
+                                    <div className="animate-pulse h-3 w-3 bg-neutral-300 rounded-full mr-2"></div>
+                                    <div className="animate-pulse h-3 w-3 bg-neutral-300 rounded-full mr-2"></div>
+                                    <div className="animate-pulse h-3 w-3 bg-neutral-300 rounded-full"></div>
                                 </div>
                             </div>
                         </div>
@@ -924,7 +1049,7 @@ function ChatComponent({
                         )}
 
                         {/* Input Area */}
-                        {!templateForm && isConfigLoaded && (
+                        {isConfigLoaded && (!formTemplate?.fields || formTemplate.fields?.length === 0) && (
                             <div className="relative w-full flex">
                                 {inputEnable ? (
                                 // When inputEnable is true
@@ -1115,7 +1240,7 @@ function ChatComponent({
                         )}
 
                         {/* Template Form Area */}
-                        {templateForm && formTemplate && (
+                        {formTemplate?.fields && formTemplate.fields.length > 0 && inputEnable && (
                             <div className="relative w-full flex">
                                 <div className="relative w-full h-auto text-sm md:text-base p-2 resize-none overflow-auto bg-neutral-100 dark:bg-neutral-700 dark:text-white">
                                     <div className="w-full max-h-80 text-sm md:text-base bg-transparent border-none focus:outline-none focus:border-none resize-none overflow-auto p-2
@@ -1129,96 +1254,201 @@ function ChatComponent({
                                                 dark:[&::-webkit-scrollbar-thumb]:bg-[#414141]
                                                 [&::-webkit-scrollbar-thumb]:hover:bg-[#acabab]
                                                 dark:[&::-webkit-scrollbar-thumb]:hover:bg-[#2a2a2a]">
-                                        <form className="space-y-4 p-4 bg-transparent">
-                                            <h2 className="text-xl font-bold mb-4">{formTemplate.title}</h2>
-                                            {formTemplate.fields.map((field, index) =>
-                                                'fields' in field ? (
-                                                    <div key={index} className="space-y-4">
-                                                        <h3 className="font-semibold text-lg">{field.title}</h3>
-                                                        <div className="flex space-x-4">
-                                                            {field.fields.map((subField, subIndex) => (
-                                                                <div key={subIndex} className="flex flex-col w-1/2">
-                                                                    <label htmlFor={subField.name} className="mb-1 font-medium">
-                                                                        {subField.label}
-                                                                    </label>
-                                                                    {subField.type === 'textarea' ? (
-                                                                        <textarea
-                                                                            required
-                                                                            id={subField.name}
-                                                                            name={subField.name}
-                                                                            placeholder={subField.placeholder}
-                                                                            className="p-2 bg-white dark:bg-neutral-800 text-black dark:text-white border rounded"
-                                                                            onChange={handleFormChange}
-                                                                            value={formValues[subField.name] || ""}
-                                                                        />
-                                                                    ) : (
-                                                                        <input
-                                                                            required
-                                                                            id={subField.name}
-                                                                            type={subField.type}
-                                                                            name={subField.name}
-                                                                            placeholder={subField.placeholder}
-                                                                            className="p-2 bg-white dark:bg-neutral-800 text-black dark:text-white border rounded"
-                                                                            onChange={handleFormChange}
-                                                                            value={formValues[subField.name] || ""}
-                                                                        />
-                                                                    )}
-                                                                </div>
-                                                            ))}
+                                        <form className="space-y-4 p-4 bg-transparent max-w-4xl mx-auto">
+                                            <h2 className="text-lg font-bold mb-4">{formTemplate.title}</h2>
+                                            {/* MAIN FIELDS AND NESTED GROUPS */}
+                                            <div className="grid grid-cols-2 gap-4">
+                                                {formTemplate?.fields?.map((field, index) =>
+                                                    'fields' in field ? (
+                                                        // NESTED GROUP: full width header + subfields in one row
+                                                        <div key={index} className="col-span-2 space-y-4">
+                                                            <h3 className="font-semibold text-base">{field.title}</h3>
+                                                            {/* Subfields in one row, spaced evenly */}
+                                                            <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-4">
+                                                                {field.fields.map((subField, subIndex) => (
+                                                                    <div key={subIndex} className="flex flex-col">
+                                                                        <label htmlFor={subField.name} className="mb-1 text-left font-medium">
+                                                                            {subField.label}
+                                                                        </label>
+                                                                        {subField.type === 'textarea' ? (
+                                                                            <textarea
+                                                                                required
+                                                                                id={subField.name}
+                                                                                name={subField.name}
+                                                                                placeholder={subField.placeholder}
+                                                                                className="p-2 text-sm bg-white dark:bg-neutral-800 text-black dark:text-white border rounded"
+                                                                                onChange={handleFormChange}
+                                                                                value={formValues[subField.name] || ""}
+                                                                            />
+                                                                        ) : subField.type === 'select' ? (
+                                                                            <select
+                                                                                id={subField.name}
+                                                                                name={subField.name}
+                                                                                className="p-2 text-sm bg-white dark:bg-neutral-800 text-black dark:text-white border rounded"
+                                                                                onChange={handleFormChange}
+                                                                                value={formValues[subField.name] || ''}
+                                                                            >
+                                                                                <option value="">Select an option</option>
+                                                                                {subField.options?.map((opt) => (
+                                                                                    <option key={opt.value} value={opt.value}>
+                                                                                        {opt.label}
+                                                                                    </option>
+                                                                                ))}
+                                                                            </select>
+                                                                        ) : subField.type === 'multiselect' ? (
+                                                                            <div id={subField.name} className="flex flex-col gap-2">
+                                                                                {subField.options?.map((opt) => (
+                                                                                    <label key={opt.value} className="inline-flex items-center gap-2 text-sm text-black dark:text-white">
+                                                                                        <input
+                                                                                            type="checkbox"
+                                                                                            name={subField.name}
+                                                                                            value={formValues[subField.name] || ''}
+                                                                                            checked={
+                                                                                                Array.isArray(formValues[subField.name]) &&
+                                                                                                (formValues[subField.name] as string[]).includes(opt.value)
+                                                                                            }
+                                                                                            onChange={(e) => {
+                                                                                                const isChecked = e.target.checked;
+                                                                                                setFormValues((prev) => {
+                                                                                                    const current = Array.isArray(prev[subField.name]) ? (prev[subField.name] as string[]) : [];
+                                                                                                    const updated = isChecked
+                                                                                                        ? [...current, opt.value]
+                                                                                                        : current.filter((val: string) => val !== opt.value);
+                                                                                                    return {
+                                                                                                        ...prev,
+                                                                                                        [subField.name]: updated,
+                                                                                                    };
+                                                                                                });
+                                                                                            }}
+                                                                                            className="p-2 border rounded bg-white dark:bg-neutral-800"
+                                                                                        />
+                                                                                        {opt.label}
+                                                                                    </label>
+                                                                                ))}
+                                                                            </div>
+                                                                        ) : (
+                                                                            <input
+                                                                                required
+                                                                                id={subField.name}
+                                                                                type={subField.type}
+                                                                                name={subField.name}
+                                                                                placeholder={subField.placeholder}
+                                                                                className="p-2 text-sm bg-white dark:bg-neutral-800 text-black dark:text-white border rounded"
+                                                                                onChange={handleFormChange}
+                                                                                value={formValues[subField.name] || ""}
+                                                                            />
+                                                                        )}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                ) : (
-                                                    <div key={index} className="flex flex-col">
-                                                    <label htmlFor={field.name} className="mb-1 font-medium">
-                                                        {field.label}
-                                                    </label>
-                                                    {field.type === 'textarea' ? (
-                                                        <textarea
-                                                            required
-                                                            id={field.name}
-                                                            name={field.name}
-                                                            placeholder={field.placeholder}
-                                                            className="p-2 bg-white dark:bg-neutral-800 text-black dark:text-white border rounded"
-                                                            onChange={handleFormChange}
-                                                            value={formValues[field.name] || ""}
-                                                        />
                                                     ) : (
-                                                        <input
-                                                            required
-                                                            id={field.name}
-                                                            type={field.type}
-                                                            name={field.name}
-                                                            placeholder={field.placeholder}
-                                                            className="p-2 bg-white dark:bg-neutral-800 text-black dark:text-white border rounded"
-                                                            onChange={handleFormChange}
-                                                            value={formValues[field.name] || ""}
-                                                        />
-                                                    )}
-                                                    </div>
-                                                )
-                                            )}
-                                            {formError && (
-                                                <p className="text-base text-red-700 dark:text-red-500 font-serif">
-                                                    ❌ {submitFormError}
-                                                </p>
-                                            )}
-                                            <button
-                                                type="submit"
-                                                onClick={handleFormSubmit}
-                                                className="px-4 py-2 bg-black dark:bg-white text-white dark:text-black rounded-full hover:bg-neutral-800 dark:hover:bg-neutral-100"
-                                            >
-                                                {submitForm}
-                                            </button>
+                                                        // SINGLE FIELD, each takes half the width of grid cols-2
+                                                        <div key={index} className="flex flex-col">
+                                                            <label htmlFor={field.name} className="mb-1 text-left font-medium">
+                                                                {field.label}
+                                                            </label>
+                                                            {/* Same input types as above */}
+                                                            {field.type === 'textarea' ? (
+                                                                <textarea
+                                                                    required
+                                                                    id={field.name}
+                                                                    name={field.name}
+                                                                    placeholder={field.placeholder}
+                                                                    className="p-2 text-sm bg-white dark:bg-neutral-800 text-black dark:text-white border rounded"
+                                                                    onChange={handleFormChange}
+                                                                    value={formValues[field.name] || ""}
+                                                                />
+                                                            ) : field.type === 'select' ? (
+                                                                <select
+                                                                    id={field.name}
+                                                                    name={field.name}
+                                                                    className="p-2 text-sm bg-white dark:bg-neutral-800 text-black dark:text-white border rounded"
+                                                                    onChange={handleFormChange}
+                                                                    value={formValues[field.name] || ""}
+                                                                >
+                                                                    <option value="">Select an option</option>
+                                                                    {field.options?.map(opt => (
+                                                                        <option key={opt.value} value={opt.value}>
+                                                                            {opt.label}
+                                                                        </option>
+                                                                    ))}
+                                                                </select>
+                                                            ) : field.type === 'multiselect' ? (
+                                                                <div id={field.name} className="flex flex-col gap-2">
+                                                                    {field.options?.map((opt) => (
+                                                                        <label key={opt.value} className="inline-flex items-center gap-2 text-sm text-black dark:text-white">
+                                                                            <input
+                                                                                type="checkbox"
+                                                                                name={field.name}
+                                                                                value={formValues[field.name] || ""}
+                                                                                checked={Array.isArray(formValues[field.name]) && (formValues[field.name] as string[]).includes(opt.value)}
+                                                                                onChange={(e) => {
+                                                                                    const isChecked = e.target.checked;
+                                                                                    setFormValues((prev) => {
+                                                                                        const current = Array.isArray(prev[field.name])
+                                                                                            ? (prev[field.name] as string[])
+                                                                                            : [];
+                                                                                        const updated = isChecked
+                                                                                            ? [...current, opt.value]
+                                                                                            : current.filter((val: string) => val !== opt.value);
+                                                                                        return {
+                                                                                            ...prev,
+                                                                                            [field.name]: updated,
+                                                                                        };
+                                                                                    });
+                                                                                }}
+                                                                                className="p-2 border rounded bg-white dark:bg-neutral-800"
+                                                                            />
+                                                                            {opt.label}
+                                                                        </label>
+                                                                    ))}
+                                                                </div>
+                                                            ) : (
+                                                                <input
+                                                                    required
+                                                                    id={field.name}
+                                                                    type={field.type}
+                                                                    name={field.name}
+                                                                    placeholder={field.placeholder}
+                                                                    className="p-2 text-sm bg-white dark:bg-neutral-800 text-black dark:text-white border rounded"
+                                                                    onChange={handleFormChange}
+                                                                    value={formValues[field.name] || ""}
+                                                                />
+                                                            )}
+                                                        </div>
+                                                    )
+                                                )}
+                                            </div>
+                                            {/* ERROR MESSAGE + BUTTON - NOT AFFECTED BY GRID */}
+                                            <div className="flex flex-col items-center justify-center pt-4 space-y-2">
+                                                {formError && (
+                                                    <p className="text-base text-red-700 dark:text-red-500 font-serif">
+                                                        ❌ {submitFormError}
+                                                    </p>
+                                                )}
+                                                <button
+                                                    type="submit"
+                                                    onClick={handleFormSubmit}
+                                                    className="px-4 py-2 text-sm bg-black dark:bg-white text-white dark:text-black rounded-full hover:bg-neutral-800 dark:hover:bg-neutral-100"
+                                                >
+                                                    {submitForm}
+                                                </button>
+                                            </div>
                                         </form>
                                     </div>
                                 </div>
                             </div>
                         )}
+                        {formTemplate?.fields && formTemplate.fields.length > 0 && !inputEnable && (
+                            <div className="flex flex-col items-center justify-center py-4">
+                                <FiLoader className="animate-spin spin-slow text-4xl text-neutral-600 dark:text-neutral-400 mb-4" />
+                                <span className="w-full p-4 text-center italic text-neutral-600 dark:text-neutral-400">{loadingForm}</span>
+                            </div>
+                        )}
 
                     </div>
                 </div>
-
-                
 
                 {/* Modal pop-up for Session Expired */}
                 <Modal
