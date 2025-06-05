@@ -374,5 +374,13 @@
         "fr-FR": "Actualiser pour une nouvelle recherche",
         "de-DE": "Aktualisieren für neue Suche",
         "it-IT": "Aggiorna per una nuova ricerca"
+    },
+    "loadingSearch": {
+        "pt-PT": "A procurar por",
+        "en-US": "Searching for",
+        "es-ES": "Buscando",
+        "fr-FR": "Recherche de",
+        "de-DE": "Suche nach",
+        "it-IT": "Ricerca di"
     }
 }

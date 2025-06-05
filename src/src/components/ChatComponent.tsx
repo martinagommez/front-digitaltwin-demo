@@ -175,7 +175,6 @@ function ChatComponent({
             setSessionId(response.data.session_id);
             setToken(response.data.token);
             setFormTemplate(response.data.template_fields);
-            // setFormTemplate(exampleTemplate);
             setIsConfigLoaded(true);
             console.log("Form Template set from backend:", response.data.template_fields);
             // const data: ChatAppResponse = await response.data;

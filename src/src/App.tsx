@@ -1,7 +1,6 @@
 import VirtualAssistent from "./components/VirtualAssistent";
 import { LanguageProvider } from './components/LanguageContext';
 import { useEffect, useState  } from "react";
-
 function App() {
 	const [configTitle, setConfigTitle] = useState<string>('Home page');
 	useEffect(() => {
@@ -20,6 +19,11 @@ function App() {
 		};
 		fetchConfig();
 	}, [configTitle]);
+
+	useEffect(() => {
+		document.body.classList.remove("preload");
+	}, []);
+
 	return (
 		<LanguageProvider>
 			<VirtualAssistent />

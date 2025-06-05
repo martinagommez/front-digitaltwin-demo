@@ -134,7 +134,7 @@ function VirtualAssistent() {
 			} else if (plugins?.NumberOfPlugins > 1) {
 				console.log("Number of Plugins:", plugins?.NumberOfPlugins);
 				console.log("Tenho mais que um plugin!", plugins.PluginList);
-				plugins.PluginList[0].PluginType = 'chatbot';
+				plugins.PluginList[0].PluginType = 'search';
 				plugins.PluginList[1].PluginType = 'files';
 				plugins.PluginList[2].PluginType = 'search';
 			} else {

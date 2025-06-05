@@ -1,3 +1,8 @@
+/* Prevent layout shift until CSS is ready */
+body.preload {
+    visibility: hidden;
+}
+
 .markdown h1 {
     font-size: 1.875rem; /* text-3xl */
     font-weight: bold;
@@ -81,4 +86,8 @@
     .markdown h3 { font-size: 1.125rem; }  /* text-lg */
     .markdown h4 { font-size: 0.875rem; } /* text-sm */
     .markdown p  { font-size: 0.75rem; } /* text-xs */
+}
+
+.spin-slow {
+  animation-duration: 3s !important; /* slow spin */
 }
