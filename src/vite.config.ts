@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react-swc'
 export default defineConfig({
     plugins: [react()],
     server: {
-        allowedHosts: ["digitwins-agentic-app-front-3.azurewebsites.net"]
+        allowedHosts: ["digitwins-agentic-app-front-3.azurewebsites.net","localhost"]
     }
 })
 

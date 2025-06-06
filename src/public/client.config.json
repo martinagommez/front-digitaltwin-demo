@@ -8,7 +8,7 @@
     "pluginsTitle": "Choose one of these options",
     "logo": "https://png.pngtree.com/png-clipart/20240508/original/pngtree-artificial-intelligence-logo-png-image_15034966.png",
     "favicon": "https://png.pngtree.com/png-clipart/20230411/original/pngtree-artificial-intelligence-robot-illustration-png-image_9047239.png",
-    "setupApi": "https://digitwins-agentic-app-orch-1.azurewebsites.net/setup_api",
+    "setupApi": "http://localhost:8000/setup_api",
     "speechKey": "648870b6148d441592fe08cfe7ccca7e",
     "speechRegion": "westeurope",
     "cognitiveKey": "DuV41cj59GaV7QF6sAd9hipla1ek6tTVLR3FtRU9lr169hBWkDE4JQQJ99BBAC5RqLJXJ3w3AAAEACOG2Dur",

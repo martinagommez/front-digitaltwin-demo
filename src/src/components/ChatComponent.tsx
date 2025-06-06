@@ -159,7 +159,7 @@ function ChatComponent({
         try {
             const url = activedPlugin.PluginHost.startsWith('https')
                 ? activedPlugin.PluginHost
-                : `https://${activedPlugin.PluginHost}`;
+                : `http://${activedPlugin.PluginHost}`;
             console.log("Payload being sent to backend:", formData);
             for (const pair of formData.entries()) {
                 console.log("   ➤", pair[0], pair[1]);

@@ -113,7 +113,6 @@ function VirtualAssistent() {
 		try {
 			const response = await axios.get(setupApi, {
 				headers: {
-					mode: 'no-cors',
 					'Content-Type': 'application/json',
 					'Access-Control-Allow-Origin': '*',
 				},
