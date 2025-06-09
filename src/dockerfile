@@ -1,0 +1,15 @@
+
+FROM node:21-alpine3.20 AS builder
+WORKDIR /app
+
+COPY package*.json ./ 
+
+RUN npm install
+RUN npm install react-markdown
+COPY . .
+
+ENV HOST=0.0.0.0
+
+EXPOSE 5173 
+
+CMD [ "npm" , "run", "start" ]
