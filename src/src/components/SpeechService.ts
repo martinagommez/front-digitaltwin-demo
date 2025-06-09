@@ -1,4 +1,5 @@
 import * as sdk from "microsoft-cognitiveservices-speech-sdk";
+import { log } from './log';
 // import { TextAnalyticsClient, AzureKeyCredential, DetectLanguageResult } from "@azure/ai-text-analytics";
 
 interface ProcessConfig {
@@ -11,10 +12,10 @@ interface ProcessConfig {
 const loadConfig = async (): Promise<ProcessConfig> => {
     const response = await fetch("/client.config.json");
     if (!response.ok) {
-        console.log("não resultou");
+        log("não resultou");
         throw new Error("Failed to load config");
     }
-    console.log("Resposta",response);
+    log("Resposta",response);
     return response.json();
 };
 
@@ -60,13 +61,13 @@ const cleanUpTranscription = (text: string): string => {
 //         const results = await client.detectLanguage([{ id: "1", text }]); // Returns an array
 //         const result: DetectLanguageResult = results[0]; // Ensure TypeScript knows the type
 //         if (result.error) {
-//             console.log("Language detection failed. Defaulting to 'en'.");
+//             log("Language detection failed. Defaulting to 'en'.");
 //             return "en";
 //         }
-//         console.log("Detected Language:", result);
+//         log("Detected Language:", result);
 //         return result.primaryLanguage.iso6391Name; // Example: 'en', 'pt', 'es'
 //     } catch (error) {
-//         console.log("Error detecting language:", error);
+//         log("Error detecting language:", error);
 //         return "en"; // Fallback to English if language detection fails
 //     }
 // };
@@ -77,7 +78,7 @@ export const startRealTimeSpeechRecognition = async (
     onStop: () => void
 ): Promise<sdk.SpeechRecognizer> => {
     const config = await loadConfig(); // Load config json dynamically
-    console.log("Config key & region:", config.speechKey, config.speechRegion);
+    log("Config key & region:", config.speechKey, config.speechRegion);
     const speechConfig = sdk.SpeechConfig.fromSubscription(config.speechKey, config.speechRegion);
     // let currentLanguage = "en"; // Default language
 
@@ -85,12 +86,12 @@ export const startRealTimeSpeechRecognition = async (
     try {
         localStorage.removeItem('language');
         const userLanguage = localStorage.getItem('language') || 'pt-PT';
-        console.log("Type of userLanguage:", typeof userLanguage);
-        console.log("Detected userLanguage:", userLanguage);
+        log("Type of userLanguage:", typeof userLanguage);
+        log("Detected userLanguage:", userLanguage);
         speechConfig.speechRecognitionLanguage = userLanguage;
     } catch (error) {
         console.error("Error retrieving language from localStorage:", error);
-        console.log("Falling back to default language: pt-PT");
+        log("Falling back to default language: pt-PT");
     }
 
     const audioConfig = sdk.AudioConfig.fromDefaultMicrophoneInput();
@@ -105,20 +106,20 @@ export const startRealTimeSpeechRecognition = async (
         sender: sdk.Recognizer,
         event: sdk.SpeechRecognitionEventArgs
     ) => {
-        console.log("🔊 Starting recognition");
+        log("🔊 Starting recognition");
         if (event.result.reason === sdk.ResultReason.RecognizedSpeech) {
             finalText = event.result.text; // Update finalText with recognized speech
             const cleanedText = cleanUpTranscription(finalText); // Clean up the text
             onTextUpdate(cleanedText); // Update the input field with cleaned text
-            console.log("🎵 Recognized speech:", finalText);
-            console.log("🎵 Cleaned text:", cleanedText);
+            log("🎵 Recognized speech:", finalText);
+            log("🎵 Cleaned text:", cleanedText);
             // // Detect the language of the recognized text
             // const detectedLanguage = await detectLanguage(cleanedText);
-            // console.log("Detected Language:", detectedLanguage);
+            // log("Detected Language:", detectedLanguage);
             // // If the detected language is different, update the recognition language
             // if (detectedLanguage !== currentLanguage) {
             //     currentLanguage = detectedLanguage;
-            //     console.log("Updating speech recognition language to:", currentLanguage);
+            //     log("Updating speech recognition language to:", currentLanguage);
             //     speechConfig.speechRecognitionLanguage = currentLanguage;
             // }
         }
@@ -134,7 +135,7 @@ export const startRealTimeSpeechRecognition = async (
     };
 
     recognizer.sessionStopped = () => {
-        console.log("✅ Recognition session stopped.");
+        log("✅ Recognition session stopped.");
         recognizer.stopContinuousRecognitionAsync();
         onStop();
     };
@@ -145,11 +146,11 @@ export const startRealTimeSpeechRecognition = async (
 
 export const stopRealTimeSpeechRecognition = async (recognizer: sdk.SpeechRecognizer | null) => {
     if (recognizer) {
-        console.log("🛑 Stopping recognition...");
+        log("🛑 Stopping recognition...");
         await new Promise<void>((resolve, reject) => {
             recognizer.stopContinuousRecognitionAsync(
                 () => {
-                    console.log("✅ Recognition stopped.");
+                    log("✅ Recognition stopped.");
                     recognizer.close();
                     resolve();
                 },

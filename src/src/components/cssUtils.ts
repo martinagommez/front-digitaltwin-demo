@@ -1,3 +1,5 @@
+import { log } from './log';
+
 export const updateCSSVariables = (variables: Record<string, any>, language: string) => {
     const root = document.documentElement;
     for (const [key, value] of Object.entries(variables)) {
@@ -13,7 +15,7 @@ export const fetchAndUpdateCSSVariables = async (url: string, language: string) 
     try {
         const response = await fetch(url); // Fetch JSON from the public folder
         const data = await response.json();
-        console.log('Fetched JSON', data);
+        log('Fetched JSON', data);
         // Apply the CSS variables from the fetched data
         updateCSSVariables(data, language);
 		const root = document.documentElement;

@@ -16,6 +16,7 @@ import AnalysisComponent from './AnalysisComponent';
 import './styles.css';
 import { ChatAppResponse } from '../api/models';
 import { PluginMeta, PluginKeys } from '../models/requests/PluginApi';
+import { log } from './log';
 
 interface Message {
     text: string;
@@ -65,9 +66,9 @@ type Template = {
 
 function ChatComponent({ 
     inputEnable, setInputEnable, 
-    debugMode, setDebugMode, 
+    debugMode, 
     isChatSidebarOpen, setIsChatSidebarOpen, 
-    activedPlugin, setActivedPlugin,
+    activedPlugin,
     pluginKeys,
     selectedLanguage, 
     darkMode, 
@@ -132,7 +133,7 @@ function ChatComponent({
     };
 
     useEffect(() => {
-        console.log("Setting answer:", exampleAnswer);
+        log("Setting answer:", exampleAnswer);
         setAnswer(exampleAnswer);
     }, []); // Runs only once when component mounts setAnswer(exampleAnswer);
 
@@ -160,9 +161,9 @@ function ChatComponent({
             const url = activedPlugin.PluginHost.startsWith('https')
                 ? activedPlugin.PluginHost
                 : `https://${activedPlugin.PluginHost}`;
-            console.log("Payload being sent to backend:", formData);
+            log("Payload being sent to backend:", formData);
             for (const pair of formData.entries()) {
-                console.log("   ➤", pair[0], pair[1]);
+                log("   ➤", pair[0], pair[1]);
             }
             const response = await axios.post(url + "/message", formData, {
                 headers: {
@@ -170,17 +171,17 @@ function ChatComponent({
                     'Access-Control-Allow-Origin': '*' // WARNING -> THIS MUST HAVE THE URL/message OF THE ORCHESTRATOR. ELSE IT MIGHT BE PRONE TO ERRORS. Is dangerous in production if not tightly controlled.
                 }, timeout: 10000000
             });
-            console.log("Response from backend", response);
+            log("Response from backend", response);
             const apiResponse = response.data.response;
             setSessionId(response.data.session_id);
             setToken(response.data.token);
             setFormTemplate(response.data.template_fields);
             // setFormTemplate(exampleTemplate);
             setIsConfigLoaded(true);
-            console.log("Form Template set from backend:", response.data.template_fields);
+            log("Form Template set from backend:", response.data.template_fields);
             // const data: ChatAppResponse = await response.data;
             // setAnswer(data);
-            // console.log("Setting answer:", data);
+            // log("Setting answer:", data);
             let currentMessage = '';
             let index = 0;
             const typingEffect = () => {
@@ -235,7 +236,7 @@ function ChatComponent({
                     orch_config_key: pluginKeys!.orch_config_key
                 },
             ]);
-            console.log("messageId from fetch message", messageId);
+            log("messageId from fetch message", messageId);
             setInputEnable(false);
             typingEffect();
             if (response.data.authentication === "AUTHENTICATION_FAILED") {
@@ -263,8 +264,8 @@ function ChatComponent({
     };
 
     useEffect(() => {
-        console.log("Form Template set (effect):", formTemplate);
-        console.log("Is Config Loaded (effect):", isConfigLoaded);
+        log("Form Template set (effect):", formTemplate);
+        log("Is Config Loaded (effect):", isConfigLoaded);
     }, [formTemplate, isConfigLoaded]);
 
     useEffect(() => {
@@ -326,7 +327,7 @@ function ChatComponent({
             return;
         }
         setFormError(false);
-        console.log("Submitted form data:", formValues);
+        log("Submitted form data:", formValues);
         // Push it into the messages state as a user message
         setMessages(prevMessages => [
             ...prevMessages,
@@ -366,7 +367,7 @@ function ChatComponent({
         }));
         formData.append("template_fields", JSON.stringify(formattedTemplateFields));
         await fetchMessage(formData);
-        console.log("Handle Form Send", formData);
+        log("Handle Form Send", formData);
     };
 
     // Envio da mensagem
@@ -407,14 +408,14 @@ function ChatComponent({
                 orch_config_key:activedPlugin?.PluginKeys.orch_config_key
             },
         ]);
-        console.log(formData)
+        log(formData)
         setInputText("");
         setUploadedFiles([]);
         setUploadedImages([]);
         setImagePreviews([]);
         setInputEnable(false);
         await fetchMessage(formData);
-        console.log("Handle Message Send", formData);
+        log("Handle Message Send", formData);
     };
 
     const copyToClipboard = async (messageText: string, messageId: string) => {
@@ -484,7 +485,7 @@ function ChatComponent({
 
     // Function to get the correct Azure voice for the selected language
     const getAzureVoice = (language: string) => {
-        console.log( "🗣️ getAzureVoice", language)
+        log( "🗣️ getAzureVoice", language)
         return voices[language] || "en-US-JennyNeural"; // Default to English if not found
     };
 
@@ -536,7 +537,7 @@ function ChatComponent({
             if (audioRef.current) {
                 audioRef.current.pause();
                 audioRef.current.currentTime = 0; // reset playback
-                console.log("🛑 Stoping audio.")
+                log("🛑 Stoping audio.")
             }
             currentPlayingMessageIdRef.current = null;
             setPlayingMessageId(null);
@@ -548,13 +549,13 @@ function ChatComponent({
             audioRef.current.currentTime = 0;
             currentPlayingMessageIdRef.current = null;
             setPlayingMessageId(null);
-            console.log("🛑 Stoping message to change audios.")
-            console.log("🔄 Switching")
+            log("🛑 Stoping message to change audios.")
+            log("🔄 Switching")
         }
         // Mark this message as currently playing.
         currentPlayingMessageIdRef.current = messageId;
         setPlayingMessageId(messageId);
-        console.log("🔊 Audio playing.")
+        log("🔊 Audio playing.")
         try {
             // Get the audio URL from Azure Speech Services.
             const audioUrl = await synthesizeTextToAudio(chatbotResponse);
@@ -564,16 +565,16 @@ function ChatComponent({
             audio.onended = () => {
                 currentPlayingMessageIdRef.current = null;
                 setPlayingMessageId(null);
-                console.log("✅ Audio ended.")
+                log("✅ Audio ended.")
             };
             // Start playback.
             await audio.play().catch((err) => {
-                console.log("❌ Audio play error:", err);
+                log("❌ Audio play error:", err);
                 currentPlayingMessageIdRef.current = null;
                 setPlayingMessageId(null);
             });
         } catch (error) {
-            console.log("❌ Error synthesizing audio;", error) 
+            log("❌ Error synthesizing audio;", error) 
             currentPlayingMessageIdRef.current = null;
             setPlayingMessageId(null);
         }
@@ -690,12 +691,12 @@ function ChatComponent({
 					});
 				}
                 setFeedbackApi(data.feedbackApi || '');
-                console.log('Language Data:', data);
+                log('Language Data:', data);
 			} catch (error) {
 				console.error('Error fetching button states:', error);
 			} finally {
 				setIsConfigLoaded(true); // Mark as loaded
-                console.log("Is config loaded:", isConfigLoaded)
+                log("Is config loaded:", isConfigLoaded)
 			}
 		};
 		updateFeaturesStates();
@@ -728,14 +729,14 @@ function ChatComponent({
         formData.append("user_input", ""); // Empty text
         formData.append("body","");
         formData.append("language",selectedLanguage);
-        console.log("language first message", selectedLanguage);
+        log("language first message", selectedLanguage);
         formData.append("timestamp", getFormattedTimestamp());
         formData.append("orch_config_id", activedPlugin?.PluginKeys.orch_config_id ?? "");
         formData.append("orch_config_key", activedPlugin?.PluginKeys.orch_config_key ?? "");
         fetchMessage(formData);
-        console.log("Actived Plugin do useEffect do chatbot", formData);
-        console.log("Session expired state at beginning", isSessionExpired);
-        console.log("Chat ended state at beginning", isEndChat);
+        log("Actived Plugin do useEffect do chatbot", formData);
+        log("Session expired state at beginning", isSessionExpired);
+        log("Chat ended state at beginning", isEndChat);
     }, []);
 
     // Desativar caixa de texto quando a sessão expira
@@ -842,7 +843,7 @@ function ChatComponent({
                                             {featuresStates.enableCopy && (
                                                 <div>
                                                     <button
-                                                        onClick={() => {console.log("📎 Copy - message.id onClick:", message.id); copyToClipboard(message.text, message.id)}}
+                                                        onClick={() => {log("📎 Copy - message.id onClick:", message.id); copyToClipboard(message.text, message.id)}}
                                                         className="w-6 h-6 text-black dark:text-white hover:text-neutral-700 dark:hover:text-neutral-300"
                                                     >
                                                         {copiedMessageId === message.id ? (
@@ -980,7 +981,7 @@ function ChatComponent({
                                                 <div>
                                                     <button
                                                         title={playingMessageId === message.id ? audioPauseButton : audioPlayButton}
-                                                        onClick={() => {console.log("🎵 Play/Pause - message.id onClick:", message.id); playChatbotResponse(message.text, message.id);}}
+                                                        onClick={() => {log("🎵 Play/Pause - message.id onClick:", message.id); playChatbotResponse(message.text, message.id);}}
                                                         className="flex items-center justify-center rounded-full w-5 h-5 mb-2 
                                                             bg-black dark:bg-white text-neutral-200 dark:text-neutral-900 hover:bg-neutral-700 dark:hover:bg-neutral-300"
                                                     >
@@ -1542,7 +1543,7 @@ export default ChatComponent;
     //                 'Content-Type': 'application/json',
     //             }
     //         });
-    //         console.log(response.data);
+    //         log(response.data);
     //         if (response.data === "SESSION_EXPIRED") {
     //             setIsSessionExpired(true);
     //         }
@@ -1606,14 +1607,14 @@ export default ChatComponent;
         // useEffect(() => {
     //     const ws = new WebSocket("ws://127.0.0.1:8000/ws");
     //     ws.onopen = () => {
-    //         console.log("Connected to WebSocket");
+    //         log("Connected to WebSocket");
     //     };
     //     ws.onmessage = (event) => {
-    //         console.log("Message received:", event.data);
+    //         log("Message received:", event.data);
     //         setMessages((prevMessages) => [...prevMessages, event.data]);
     //     };
     //     ws.onclose = () => {
-    //         console.log("WebSocket closed");
+    //         log("WebSocket closed");
     //         setTimeout(() => {
     //             setSocket(new WebSocket("ws://127.0.0.1:8000/ws")); // Attempt reconnection
     //         }, 3000);

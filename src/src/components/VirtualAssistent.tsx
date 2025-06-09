@@ -11,6 +11,7 @@ import ChatComponent from './ChatComponent';
 import FilesProcessing from './FilesProcessing';
 import './styles.css';
 import { fetchAndUpdateCSSVariables } from './cssUtils';
+import { log } from './log';
 
 type Language = {
 	code: string;
@@ -90,11 +91,11 @@ function VirtualAssistent() {
 
 	// Atualizar linguagem selecionada nos botões (dropdown e sidebar)
 	const handleLanguageChange = (lang: any) => {
-		console.log("Received language:", lang, typeof lang);
+		log("Received language:", lang, typeof lang);
 		setLanguage((prevLanguage) => {
 			if (lang !== prevLanguage) {
 				localStorage.setItem('language', lang); // Save selected language to localStorage
-				console.log("Language change",lang);
+				log("Language change",lang);
 				return lang; // Update language state
 			}
 			return prevLanguage; // No change if the same language is selected
@@ -104,7 +105,7 @@ function VirtualAssistent() {
 
 	// Atualizar linguagem selecionada na seleção de línguas (pop-up inicial)
 	const handleLanguageSelect = (lang: string) => {
-		console.log("Received language:", lang, typeof lang);
+		log("Received language:", lang, typeof lang);
 		setLanguage(lang); // Set selected language
 		localStorage.setItem('language', lang); // Save language to localStorage
 		setShowLanguageSelection(false); // Hide language selection after choosing
@@ -121,20 +122,20 @@ function VirtualAssistent() {
 				},
 			});
 			var plugins = response.data;
-			console.log('Plugins', response);
-			console.log(setupApi);
+			log('Plugins', response);
+			log(setupApi);
 			setPluginRequest(response.data);
 			if (plugins?.NumberOfPlugins === 1) {
-				console.log("Só tenho um plugin!")
+				log("Só tenho um plugin!")
 				setActivedPlugin(plugins.PluginList[0]);
-				console.log(plugins.PluginList[0]); // new for seeing what the plugin contains
+				log(plugins.PluginList[0]); // new for seeing what the plugin contains
 				setInputEnable(true);
 				// plugins.PluginList[0].PluginType = 'chatbot';
 				setPluginType(plugins.PluginList[0].PluginType);
 				setPluginKeys(plugins.PluginList[0].PluginKeys);
 			} else if (plugins?.NumberOfPlugins > 1) {
-				console.log("Number of Plugins:", plugins?.NumberOfPlugins);
-				console.log("Tenho mais que um plugin!", plugins.PluginList);
+				log("Number of Plugins:", plugins?.NumberOfPlugins);
+				log("Tenho mais que um plugin!", plugins.PluginList);
 				plugins.PluginList[0].PluginType = 'chatbot';
 				plugins.PluginList[1].PluginType = 'files';
 			} else {
@@ -179,12 +180,12 @@ function VirtualAssistent() {
 				if (clientData.enableFeatures.preferenceLanguage && !clientData.enableFeatures.browserLanguage) {
 					setShowLanguageSelection(false);
 					setLanguage(clientData.preferedLanguage);
-					console.log("ESTOU NO PREF", clientData.preferedLanguage)
+					log("ESTOU NO PREF", clientData.preferedLanguage)
 				}
 				else if (clientData.enableFeatures.browserLanguage && !clientData.enableFeatures.preferenceLanguage) {
 					const browserLang = navigator.language // Get browser language
 					const matchedLanguage = clientData.languages?.find((lang: any) => lang.code === browserLang);
-					console.log("Browser", browserLang)
+					log("Browser", browserLang)
 					// Use browser language if match found
 					if (matchedLanguage) {
 						setLanguage(matchedLanguage.code);
@@ -192,18 +193,18 @@ function VirtualAssistent() {
 					} else {
 					  	setShowLanguageSelection(true); // Show language selection if no match found
 					}
-					console.log("ESTOU NO BROWSER", matchedLanguage.code)
+					log("ESTOU NO BROWSER", matchedLanguage.code)
 				} 
 				else if (!clientData.enableFeatures.browserLanguage && !clientData.enableFeatures.preferenceLanguage) {
 					const savedLanguage = localStorage.getItem('language');
-					console.log("Saved", savedLanguage);
+					log("Saved", savedLanguage);
 					if (savedLanguage) {
 					  	setLanguage(savedLanguage); // Use saved language from localStorage
 						setShowLanguageSelection(false); // Don't show selection
 					} else {
 						setShowLanguageSelection(true); // Show selection if no language is saved
 					}
-					console.log("ESTOU NO LOCAL", savedLanguage)
+					log("ESTOU NO LOCAL", savedLanguage)
 				}
 			} catch (error) {
 				console.error('Error fetching client configuration:', error);
@@ -238,7 +239,7 @@ function VirtualAssistent() {
 						availableLanguagesTitle: data.availableLanguagesTitle[language] || data.availableLanguagesTitle['en-US'],
 					});
 				}
-				console.log("Selected", language);
+				log("Selected", language);
 			} catch (error) {
 				console.error('Error fetching client configuration:', error);
 			} finally {

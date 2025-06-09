@@ -10,6 +10,7 @@ import { renderAsync } from "docx-preview";
 import "react-data-grid/lib/styles.css";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
 import "react-pdf/dist/esm/Page/TextLayer.css";
+import { log } from './log';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
@@ -23,7 +24,7 @@ interface FilesProcessingProps {
     selectedLanguage: string;
 }
 
-function FilesProcessing({ activedPlugin, setActivedPlugin, isFilesSidebarOpen, setIsFilesSidebarOpen, selectedLanguage }: FilesProcessingProps) {
+function FilesProcessing({ activedPlugin, isFilesSidebarOpen, setIsFilesSidebarOpen, selectedLanguage }: FilesProcessingProps) {
     const [inputText, setInputText] = useState<string>('files');
     const [files, setFiles] = useState<File[]>([]);
     const [previewFile, setPreviewFile] = useState<File | null>(null);
@@ -138,14 +139,14 @@ function FilesProcessing({ activedPlugin, setActivedPlugin, isFilesSidebarOpen, 
         // } finally {
         //     setLoading(false);
         // }
-        console.log(formData);
+        log(formData);
         alert("Files uploaded successfully!");
         setIsFilesSidebarOpen(false);
         setInputText("files");
         setFiles([]);
         setLoading(false);
         await fetchFiles(formData);
-        console.log("Handle Send", formData);
+        log("Handle Send", formData);
     };
     
     // SEND FILES DE TESTE
@@ -161,13 +162,13 @@ function FilesProcessing({ activedPlugin, setActivedPlugin, isFilesSidebarOpen, 
     //             formData.append("files", file); // "files" is the key used to send the file in the form data
     //         });
     //         // Simulate a file upload (instead of sending to the backend, we just log the data)
-    //         console.log("Sending files to the backend...");
+    //         log("Sending files to the backend...");
     //         files.forEach((file) => {
-    //             console.log(`File: ${file.name}, Type: ${file.type}`);
+    //             log(`File: ${file.name}, Type: ${file.type}`);
     //         });
     //         // Optional: Simulate a successful response after the "upload" process
     //         setTimeout(() => {
-    //             console.log("Files uploaded successfully!");
+    //             log("Files uploaded successfully!");
     //             // Optionally, clear the files after upload simulation
     //             setFiles([]);
     //             setIsFilesSidebarOpen(false);
@@ -206,9 +207,9 @@ function FilesProcessing({ activedPlugin, setActivedPlugin, isFilesSidebarOpen, 
             const url = activedPlugin.PluginHost.startsWith('https')
                 ? activedPlugin.PluginHost
                 : `https://${activedPlugin.PluginHost}`;
-            console.log("Payload being sent to backend:", formData);
+            log("Payload being sent to backend:", formData);
             for (const pair of formData.entries()) {
-                console.log(pair[0], pair[1]);
+                log(pair[0], pair[1]);
             }
             const response = await axios.post(url + "/message", formData, {
                 headers: {
@@ -220,8 +221,8 @@ function FilesProcessing({ activedPlugin, setActivedPlugin, isFilesSidebarOpen, 
             // Assuming filesData is an array of files or file metadata
             const files = filesData.map((file: any) => new File([file], file.name)); // Convert to File objects
             setReceivedFiles(files);
-            console.log(response)
-            console.log(filesData)
+            log(response)
+            log(filesData)
         } catch (error) {
             console.error("Error fetching files:", error);
         }
